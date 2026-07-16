@@ -37,9 +37,7 @@ class PaymentService:
         try:
             provider = get_payment_provider(payload.provider)
         except PaymentProviderError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
         provider_result = provider.create_payment(amount=payload.amount, currency=payload.currency)
         payment = self.payments.create(
@@ -80,9 +78,7 @@ class PaymentService:
         try:
             provider = get_payment_provider(payment.provider)
         except PaymentProviderError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
         provider_result = provider.confirm_payment(provider_payment_id=payment.provider_payment_id)
         payment = self.payments.update_status(payment, provider_result.status)

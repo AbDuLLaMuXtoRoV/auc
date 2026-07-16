@@ -56,7 +56,7 @@ class Settings(BaseSettings):
         if self.is_production and self.secret_key == INSECURE_DEFAULT_SECRET_KEY:
             raise ValueError(
                 f"SECRET_KEY '{self.environment}' muhitida default qiymatda qolgan. "
-                "Kuchli tasodifiy qiymat bering: python -c \"import secrets; "
+                'Kuchli tasodifiy qiymat bering: python -c "import secrets; '
                 'print(secrets.token_urlsafe(48))"'
             )
         return self

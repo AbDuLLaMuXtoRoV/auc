@@ -77,8 +77,7 @@ def get_payment_provider(provider: str) -> BasePaymentProvider:
     provider_cls = _PROVIDERS.get(provider)
     if provider_cls is None:
         raise PaymentProviderError(
-            f"Noma'lum to'lov provayderi: {provider!r}. "
-            f"Mavjudlari: {available_provider_names()}"
+            f"Noma'lum to'lov provayderi: {provider!r}. Mavjudlari: {available_provider_names()}"
         )
 
     if provider_cls is MockPaymentProvider and not settings.allow_mock_payments:
