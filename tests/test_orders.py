@@ -1,0 +1,147 @@
+from datetime import UTC, datetime, timedelta
+
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.models.enums import UserRole
+from app.repositories.user_repository import UserRepository
+
+
+def _register_and_login(client: TestClient, email: str) -> str:
+    password = "Password1"
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "full_name": email.split("@")[0]},
+    )
+    assert register_response.status_code == 201
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": password},
+    )
+    assert login_response.status_code == 200
+    return login_response.json()["access_token"]
+
+
+def _create_closed_auction_order(client: TestClient, seller_token: str, buyer_token: str) -> dict:
+    item_response = client.post(
+        "/api/v1/items",
+        headers={"Authorization": f"Bearer {seller_token}"},
+        json={
+            "title": "Router table",
+            "condition": "used",
+            "starting_price": "100.00",
+        },
+    )
+    assert item_response.status_code == 201
+
+    now = datetime.now(UTC)
+    auction_response = client.post(
+        "/api/v1/auctions",
+        headers={"Authorization": f"Bearer {seller_token}"},
+        json={
+            "item_id": item_response.json()["id"],
+            "start_time": (now - timedelta(minutes=1)).isoformat(),
+            "end_time": (now + timedelta(days=1)).isoformat(),
+            "minimum_bid_increment": "10.00",
+        },
+    )
+    assert auction_response.status_code == 201
+    auction_id = auction_response.json()["id"]
+
+    bid_response = client.post(
+        f"/api/v1/bids/{auction_id}",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+        json={"amount": "120.00"},
+    )
+    assert bid_response.status_code == 201
+
+    close_response = client.post(
+        f"/api/v1/auctions/{auction_id}/close",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
+    assert close_response.status_code == 200
+
+    buyer_orders_response = client.get(
+        "/api/v1/orders/buyer",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+    )
+    assert buyer_orders_response.status_code == 200
+    orders = buyer_orders_response.json()
+    assert len(orders) == 1
+    return orders[0]
+
+
+def test_order_creation_after_auction_close_and_role_views(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    buyer_token = _register_and_login(client, "buyer@example.com")
+    admin_token = _register_and_login(client, "admin@example.com")
+
+    admin_user = UserRepository(db_session).get_by_email("admin@example.com")
+    assert admin_user is not None
+    UserRepository(db_session).set_role(admin_user, UserRole.ADMIN)
+
+    order = _create_closed_auction_order(client, seller_token, buyer_token)
+    assert order["final_price"] == "120.00"
+    assert order["status"] == "pending_payment"
+
+    buyer_orders_response = client.get(
+        "/api/v1/orders/buyer",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+    )
+    assert buyer_orders_response.status_code == 200
+    assert [entry["id"] for entry in buyer_orders_response.json()] == [order["id"]]
+
+    seller_orders_response = client.get(
+        "/api/v1/orders/seller",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
+    assert seller_orders_response.status_code == 200
+    assert [entry["id"] for entry in seller_orders_response.json()] == [order["id"]]
+
+    admin_orders_response = client.get(
+        "/api/v1/orders/admin",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert admin_orders_response.status_code == 200
+    assert [entry["id"] for entry in admin_orders_response.json()] == [order["id"]]
+
+    seller_status_update = client.patch(
+        f"/api/v1/orders/{order['id']}/status",
+        headers={"Authorization": f"Bearer {seller_token}"},
+        json={"status": "pickup_pending"},
+    )
+    assert seller_status_update.status_code == 200
+    assert seller_status_update.json()["status"] == "pickup_pending"
+
+    admin_status_update = client.patch(
+        f"/api/v1/orders/{order['id']}/status",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "completed"},
+    )
+    assert admin_status_update.status_code == 200
+    assert admin_status_update.json()["status"] == "completed"
+
+
+def test_unauthorized_user_cannot_view_or_manage_another_users_order(client: TestClient) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    buyer_token = _register_and_login(client, "buyer@example.com")
+    stranger_token = _register_and_login(client, "stranger@example.com")
+
+    order = _create_closed_auction_order(client, seller_token, buyer_token)
+
+    read_response = client.get(
+        f"/api/v1/orders/{order['id']}",
+        headers={"Authorization": f"Bearer {stranger_token}"},
+    )
+    assert read_response.status_code == 403
+
+    update_response = client.patch(
+        f"/api/v1/orders/{order['id']}/status",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+        json={"status": "cancelled"},
+    )
+    assert update_response.status_code == 403
