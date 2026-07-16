@@ -8,6 +8,7 @@ tekshiriladi.
 from decimal import Decimal
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 from app.money import (
     BUYER_PREMIUM_BPS,
@@ -18,6 +19,7 @@ from app.money import (
     soum_to_tiyin,
     tiyin_to_soum,
 )
+from app.money.fields import TiyinAmount
 
 
 class TestSoumToTiyin:
@@ -125,6 +127,50 @@ class TestLargeAmounts:
         """Postgres BIGINT chegarasi ~9.2 * 10^18 tiyin = ~92 kvadrillion so'm."""
         bigint_max = 2**63 - 1
         assert soum_to_tiyin(Decimal("92000000000000000")) < bigint_max
+
+
+class _PriceModel(BaseModel):
+    price: TiyinAmount = Field(gt=0)
+
+
+class TestTiyinField:
+    """API chegarasidagi pul turi.
+
+    Regressiya himoyasi: dastlab bu tur `plain` validator bilan yozilgan
+    edi va Field(gt=0) JIMGINA e'tiborsiz qolardi — manfiy va nol narx
+    o'tib ketardi. `before` validator + int sxemasiga o'tildi.
+    """
+
+    def test_accepts_string_tiyin(self) -> None:
+        assert _PriceModel(price="6200050").price == 6_200_050
+
+    def test_accepts_int_tiyin(self) -> None:
+        assert _PriceModel(price=6_200_050).price == 6_200_050
+
+    def test_serializes_to_string_in_json(self) -> None:
+        """JS `number` katta butun sonni buzadi — shuning uchun string."""
+        assert _PriceModel(price=6_200_050).model_dump_json() == '{"price":"6200050"}'
+
+    def test_json_schema_reports_integer(self) -> None:
+        schema = _PriceModel.model_json_schema()["properties"]["price"]
+        assert schema["type"] == "integer"
+        assert schema["exclusiveMinimum"] == 0
+
+    @pytest.mark.parametrize(
+        ("value", "reason"),
+        [
+            (-5, "manfiy"),
+            (0, "nol (gt=0)"),
+            (62000.50, "float"),
+            (True, "bool"),
+            ("salom", "matn"),
+            ("62000.50", "kasrli string — tiyin butun bo'lishi kerak"),
+            ("", "bo'sh"),
+        ],
+    )
+    def test_rejects_invalid(self, value: object, reason: str) -> None:
+        with pytest.raises(ValidationError):
+            _PriceModel(price=value)
 
 
 class TestFormatSoum:
