@@ -12,6 +12,7 @@ Nega tiyin (butun son), Decimal/float emas:
 
 from app.money.money import (
     BUYER_PREMIUM_BPS,
+    TIYIN_PER_SOUM,
     Tiyin,
     calc_buyer_premium,
     calc_seller_payout,
@@ -23,6 +24,7 @@ from app.money.money import (
 
 __all__ = [
     "BUYER_PREMIUM_BPS",
+    "TIYIN_PER_SOUM",
     "Tiyin",
     "calc_buyer_premium",
     "calc_seller_payout",

@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
-from decimal import Decimal
 
-from sqlalchemy import JSON, ForeignKey, Numeric, String, Text
+from sqlalchemy import JSON, BigInteger, ForeignKey, String, Text
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import ItemCondition, ItemStatus
+from app.money import Tiyin
 
 
 class Item(Base):
@@ -30,8 +30,9 @@ class Item(Base):
     images: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     location: Mapped[str | None] = mapped_column(String(160), nullable=True)
     item_location: Mapped[str | None] = mapped_column(String(160), nullable=True)
-    starting_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    reserve_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # Pul — tiyinda (BIGINT). Batafsil: app/money/
+    starting_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
+    reserve_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

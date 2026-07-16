@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
-from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric
+from sqlalchemy import BigInteger, DateTime, ForeignKey
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import AuctionStatus
+from app.money import TIYIN_PER_SOUM, Tiyin
 
 
 class Auction(Base):
@@ -23,12 +23,14 @@ class Auction(Base):
         index=True,
         nullable=False,
     )
-    starting_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    minimum_bid_increment: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=1, nullable=False
+    # Pul — tiyinda (BIGINT). Batafsil: app/money/
+    starting_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
+    current_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
+    # Default 1 so'm = 100 tiyin (ilgari Numeric'da default=1 so'm edi).
+    minimum_bid_increment: Mapped[Tiyin] = mapped_column(
+        BigInteger, default=TIYIN_PER_SOUM, nullable=False
     )
-    reserve_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    reserve_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
     highest_bidder_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=True
     )

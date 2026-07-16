@@ -26,7 +26,7 @@ def _create_order(client: TestClient, seller_token: str, buyer_token: str) -> di
         json={
             "title": "Laser level",
             "condition": "used",
-            "starting_price": "100.00",
+            "starting_price": "10000",
         },
     )
     assert item_response.status_code == 201
@@ -39,7 +39,7 @@ def _create_order(client: TestClient, seller_token: str, buyer_token: str) -> di
             "item_id": item_response.json()["id"],
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "10.00",
+            "minimum_bid_increment": "1000",
         },
     )
     assert auction_response.status_code == 201
@@ -48,7 +48,7 @@ def _create_order(client: TestClient, seller_token: str, buyer_token: str) -> di
     bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"amount": "120.00"},
+        json={"amount": "12000"},
     )
     assert bid_response.status_code == 201
 
@@ -121,7 +121,7 @@ def test_invalid_payment_amount_is_rejected(client: TestClient) -> None:
         headers={"Authorization": f"Bearer {buyer_token}"},
         json={
             "order_id": order["id"],
-            "amount": "1.00",
+            "amount": "100",
             "currency": "UZS",
             "provider": "mock",
         },

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -147,7 +145,8 @@ class AdminService:
             statement = statement.where(Order.seller_id == seller_id)
         return list(self.db.scalars(statement))
 
-    def get_statistics(self) -> dict[str, Decimal | int]:
+    def get_statistics(self) -> dict[str, int]:
+        """Platforma statistikasi. total_sales_amount — tiyinda."""
         total_users = self.db.scalar(select(func.count(User.id))) or 0
         total_active_auctions = (
             self.db.scalar(
@@ -161,14 +160,18 @@ class AdminService:
             )
             or 0
         )
-        total_sales_amount = self.db.scalar(
-            select(func.coalesce(func.sum(Order.final_price), 0)).where(
-                Order.status.in_(
-                    [OrderStatus.PAID, OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED]
+        total_sales_amount = (
+            self.db.scalar(
+                select(func.coalesce(func.sum(Order.final_price), 0)).where(
+                    Order.status.in_(
+                        [OrderStatus.PAID, OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED]
+                    )
                 )
             )
-        ) or Decimal("0")
-        total_sales_amount = Decimal(str(total_sales_amount)).quantize(Decimal("0.01"))
+            or 0
+        )
+        # Pul tiyinda (butun son) — yaxlitlash kerak emas.
+        total_sales_amount = int(total_sales_amount)
         return {
             "total_users": total_users,
             "total_active_auctions": total_active_auctions,

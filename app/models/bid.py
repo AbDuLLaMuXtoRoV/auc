@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
-from decimal import Decimal
 
+from sqlalchemy import BigInteger, ForeignKey
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import BidStatus
+from app.money import Tiyin
 
 
 class Bid(Base):
@@ -15,7 +15,8 @@ class Bid(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     auction_id: Mapped[int] = mapped_column(ForeignKey("auctions.id"), index=True, nullable=False)
     bidder_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Pul — tiyinda (BIGINT). Batafsil: app/money/
+    amount: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     status: Mapped[BidStatus] = mapped_column(
         SqlEnum(BidStatus, name="bid_status"),
         default=BidStatus.VALID,

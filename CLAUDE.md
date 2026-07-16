@@ -12,7 +12,7 @@ C2C **muddatli auksion** marketplace (O'zbekiston). Backend: Python 3.12 + FastA
 | Modular monolith, mikroservis EMAS | MVP tezligi, tranzaksiya butunligi |
 | PostgreSQL asosiy DB | Pul = ACID |
 | Escrow'ni O'ZIMIZ ushlamaymiz | Litsenziya yo'q. PSP hold/capture qiladi, biz orkestratsiya qilamiz |
-| **Pul = butun son (tiyin), BIGINT** | Float **TAQIQ**. (Hozirgi kod: `Numeric(12,2)` — migratsiya qilinadi, Faza B) |
+| **Pul = butun son (tiyin), BIGINT** | Float **TAQIQ**. Bajarildi (Faza B): `app/money/`. API'da pul — **string, tiyinda**: `{"amount": "6200050"}` = 62 000.50 so'm |
 | Barcha vaqt UTC | Ko'rsatishda `Asia/Tashkent` |
 | Jonli video YO'Q | Pozitsiyaga zid, xarajat + moderatsiya yuki |
 | Anti-sniping | <2 daqiqa qolganda bid → end_time +2 daqiqa |
@@ -40,6 +40,7 @@ MinIO (S3-mos; hozir fayllar `uploads/` ga lokal yoziladi).
 ```
 app/
   main.py              # create_app(), /api/v1 router, /uploads static mount
+  money/               # tiyin arifmetikasi + TiyinAmount (pul bo'yicha YAGONA manba)
   core/                # config.py (Settings), security.py (JWT/bcrypt), dependencies.py (DI)
   db/                  # session.py (engine, get_db), base.py (metadata import)
   models/              # SQLAlchemy: user, item, auction, bid, order, payment, message, category, enums
@@ -86,7 +87,9 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - Docstring (JSDoc emas), **o'zbekcha**, `"""..."""`. Nima uchun — muhimroq, nima — emas.
 - Type hints majburiy. `Mapped[...]` / `mapped_column(...)` uslubi.
 - `datetime.now(UTC)` — naive datetime TAQIQ.
-- Pul: hozir `Decimal`; yangi kodda **butun son (tiyin)** ga o'tishga tayyor yoz. `float` TAQIQ.
+- **Pul: har doim `Tiyin` (butun son)**. `Decimal`/`float` TAQIQ. Hisob-kitob faqat `app/money/`
+  orqali. Sxemada `TiyinAmount` turi ishlatiladi (`app/money/fields.py`) — u JSON'ga string yozadi.
+  Yaxlitlash faqat `calc_buyer_premium` ichida; boshqa joyda takrorlanmaydi.
 
 ## Test qoidalari
 
@@ -109,10 +112,16 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 ## Ish tartibi
 
 1. O'zgartirishdan oldin tegishli `docs/` faylni o'qi.
-2. Model o'zgarsa → Alembic migratsiya majburiy.
-3. Biznes qoida o'zgarsa → docs yangilanadi.
-4. Kommitdan oldin: `ruff check .` + `pytest`.
-5. Xavfsizlik yoki pul mantiqini "keyin tuzatamiz" deb qoldirma — TODO yozib, ROADMAP'ga kirit.
+2. Model o'zgarsa → Alembic migratsiya majburiy. **Migratsiyani toza bazada sinab ko'r**
+   (`alembic upgrade head`) — testlar `create_all` ishlatadi, ya'ni ular buzuq migratsiyani
+   TUTMAYDI. Postgres ENUM'ni `create_table`/`add_column` ichida ishlatganda
+   `postgresql.ENUM(..., create_type=False)` yoz: oddiy `sa.Enum` ikkinchi marta
+   `CREATE TYPE` yuborib zanjirni yiqitadi.
+3. Pul turini o'zgartiruvchi migratsiyada ma'lumot konvertatsiyasini UNUTMA
+   (`USING (col * 100)::bigint`) — autogenerate buni yozmaydi, qiymat 100 baravar buziladi.
+4. Biznes qoida o'zgarsa → docs yangilanadi.
+5. Kommitdan oldin: `ruff check .` + `ruff format --check .` + `pytest`.
+6. Xavfsizlik yoki pul mantiqini "keyin tuzatamiz" deb qoldirma — TODO yozib, ROADMAP'ga kirit.
 
 ## docs/
 

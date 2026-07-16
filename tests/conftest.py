@@ -2,7 +2,6 @@ import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -190,7 +189,7 @@ def create_item(
     seller: AuthenticatedUser,
     *,
     title: str = "Test item",
-    starting_price: str = "10.00",
+    starting_price: str = "1000",
     category_id: int | None = None,
 ) -> dict:
     payload = {
@@ -212,7 +211,7 @@ def create_auction(
     *,
     start_delta: timedelta = -timedelta(minutes=1),
     end_delta: timedelta = timedelta(days=1),
-    minimum_bid_increment: str = "1.00",
+    minimum_bid_increment: str = "100",
     reserve_price: str | None = None,
 ) -> dict:
     now = datetime.now(UTC)
@@ -234,7 +233,7 @@ def create_bid(
     bidder: AuthenticatedUser,
     auction_id: int,
     *,
-    amount: str | Decimal = "11.00",
+    amount: str | int = "1100",
 ) -> dict:
     response = client.post(
         f"/api/v1/bids/{auction_id}",

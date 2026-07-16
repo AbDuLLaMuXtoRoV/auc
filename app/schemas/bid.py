@@ -1,13 +1,14 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import BidStatus
+from app.money.fields import TiyinAmount
 
 
 class BidCreate(BaseModel):
-    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    # Pul tiyinda, JSON'da string: {"amount": "6500025"} = 65 000.25 so'm
+    amount: TiyinAmount = Field(gt=0)
 
 
 class BidRead(BaseModel):
@@ -16,6 +17,6 @@ class BidRead(BaseModel):
     id: int
     auction_id: int
     bidder_id: int
-    amount: Decimal
+    amount: TiyinAmount
     status: BidStatus
     created_at: datetime

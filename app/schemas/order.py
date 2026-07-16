@@ -1,9 +1,9 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import OrderStatus
+from app.money.fields import TiyinAmount
 
 
 class OrderRead(BaseModel):
@@ -14,7 +14,7 @@ class OrderRead(BaseModel):
     item_id: int
     buyer_id: int
     seller_id: int
-    final_price: Decimal
+    final_price: TiyinAmount
     status: OrderStatus
     created_at: datetime
     updated_at: datetime

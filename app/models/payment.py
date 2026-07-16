@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
-from decimal import Decimal
 
+from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import PaymentStatus
+from app.money import Tiyin
 
 
 class PaymentMethod(Base):
@@ -29,7 +29,8 @@ class Payment(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True, nullable=False)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Pul — tiyinda (BIGINT). Batafsil: app/money/
+    amount: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="UZS", nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(
         SqlEnum(PaymentStatus, name="payment_status"),

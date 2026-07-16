@@ -1,9 +1,9 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import ItemCondition, ItemStatus
+from app.money.fields import TiyinAmount
 
 
 class ItemImageRead(BaseModel):
@@ -24,8 +24,9 @@ class ItemCreate(BaseModel):
     condition: ItemCondition = ItemCondition.USED
     location: str | None = Field(default=None, max_length=160)
     item_location: str | None = Field(default=None, max_length=160)
-    starting_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
-    reserve_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    # Pul tiyinda, JSON'da string: {"starting_price": "6200050"}
+    starting_price: TiyinAmount = Field(gt=0)
+    reserve_price: TiyinAmount | None = Field(default=None, gt=0)
 
 
 class ItemUpdate(BaseModel):
@@ -37,8 +38,8 @@ class ItemUpdate(BaseModel):
     status: ItemStatus | None = None
     location: str | None = Field(default=None, max_length=160)
     item_location: str | None = Field(default=None, max_length=160)
-    starting_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
-    reserve_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    starting_price: TiyinAmount | None = Field(default=None, gt=0)
+    reserve_price: TiyinAmount | None = Field(default=None, gt=0)
 
 
 class ItemRead(BaseModel):
@@ -54,8 +55,8 @@ class ItemRead(BaseModel):
     status: ItemStatus
     location: str | None
     item_location: str | None
-    starting_price: Decimal
-    reserve_price: Decimal | None
+    starting_price: TiyinAmount
+    reserve_price: TiyinAmount | None
     item_images: list[ItemImageRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime

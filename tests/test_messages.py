@@ -24,7 +24,7 @@ def _create_item(client: TestClient, seller_token: str) -> dict:
         json={
             "title": "Circular saw",
             "condition": "used",
-            "starting_price": "75.00",
+            "starting_price": "7500",
         },
     )
     assert response.status_code == 201

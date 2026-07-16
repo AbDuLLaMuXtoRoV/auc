@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from decimal import Decimal
 from uuid import uuid4
 
 from app.core.config import settings
 from app.models.enums import PaymentStatus
+from app.money import Tiyin
 
 
 class PaymentProviderError(RuntimeError):
@@ -20,7 +20,7 @@ class BasePaymentProvider(ABC):
     provider_name: str
 
     @abstractmethod
-    def create_payment(self, *, amount: Decimal, currency: str) -> PaymentProviderResult:
+    def create_payment(self, *, amount: Tiyin, currency: str) -> PaymentProviderResult:
         raise NotImplementedError
 
     @abstractmethod
@@ -37,7 +37,7 @@ class MockPaymentProvider(BasePaymentProvider):
 
     provider_name = "mock"
 
-    def create_payment(self, *, amount: Decimal, currency: str) -> PaymentProviderResult:
+    def create_payment(self, *, amount: Tiyin, currency: str) -> PaymentProviderResult:
         return PaymentProviderResult(
             provider_payment_id=f"mock_{uuid4().hex}",
             status=PaymentStatus.PENDING,

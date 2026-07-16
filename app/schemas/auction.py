@@ -1,17 +1,19 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.enums import AuctionStatus
+from app.money import TIYIN_PER_SOUM
+from app.money.fields import TiyinAmount
 
 
 class AuctionCreate(BaseModel):
     item_id: int
     start_time: datetime
     end_time: datetime
-    minimum_bid_increment: Decimal = Field(default=1, gt=0, max_digits=12, decimal_places=2)
-    reserve_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    # Pul tiyinda, JSON'da string: {"minimum_bid_increment": "100000"}
+    minimum_bid_increment: TiyinAmount = Field(default=TIYIN_PER_SOUM, gt=0)
+    reserve_price: TiyinAmount | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def validate_schedule(self) -> "AuctionCreate":
@@ -29,10 +31,10 @@ class AuctionRead(BaseModel):
     start_time: datetime
     end_time: datetime
     status: AuctionStatus
-    starting_price: Decimal
-    current_price: Decimal
-    minimum_bid_increment: Decimal
-    reserve_price: Decimal | None
+    starting_price: TiyinAmount
+    current_price: TiyinAmount
+    minimum_bid_increment: TiyinAmount
+    reserve_price: TiyinAmount | None
     highest_bidder_id: int | None
     winner_id: int | None
     winning_bid_id: int | None

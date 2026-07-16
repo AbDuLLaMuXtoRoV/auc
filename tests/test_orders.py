@@ -30,7 +30,7 @@ def _create_closed_auction_order(client: TestClient, seller_token: str, buyer_to
         json={
             "title": "Router table",
             "condition": "used",
-            "starting_price": "100.00",
+            "starting_price": "10000",
         },
     )
     assert item_response.status_code == 201
@@ -43,7 +43,7 @@ def _create_closed_auction_order(client: TestClient, seller_token: str, buyer_to
             "item_id": item_response.json()["id"],
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "10.00",
+            "minimum_bid_increment": "1000",
         },
     )
     assert auction_response.status_code == 201
@@ -52,7 +52,7 @@ def _create_closed_auction_order(client: TestClient, seller_token: str, buyer_to
     bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"amount": "120.00"},
+        json={"amount": "12000"},
     )
     assert bid_response.status_code == 201
 
@@ -85,7 +85,7 @@ def test_order_creation_after_auction_close_and_role_views(
     UserRepository(db_session).set_role(admin_user, UserRole.ADMIN)
 
     order = _create_closed_auction_order(client, seller_token, buyer_token)
-    assert order["final_price"] == "120.00"
+    assert order["final_price"] == "12000"
     assert order["status"] == "pending_payment"
 
     buyer_orders_response = client.get(

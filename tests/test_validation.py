@@ -25,7 +25,7 @@ def test_item_required_fields_and_price_validation(
     missing_title_response = client.post(
         "/api/v1/items",
         headers=test_seller.headers,
-        json={"condition": "used", "starting_price": "10.00"},
+        json={"condition": "used", "starting_price": "1000"},
     )
     assert missing_title_response.status_code == 422
     assert "title" in str(missing_title_response.json()["detail"])
@@ -33,7 +33,7 @@ def test_item_required_fields_and_price_validation(
     negative_price_response = client.post(
         "/api/v1/items",
         headers=test_seller.headers,
-        json={"title": "Invalid price", "condition": "used", "starting_price": "-1.00"},
+        json={"title": "Invalid price", "condition": "used", "starting_price": "-100"},
     )
     assert negative_price_response.status_code == 422
 
@@ -51,32 +51,48 @@ def test_auction_time_validation(
             "item_id": item["id"],
             "start_time": now.isoformat(),
             "end_time": (now - timedelta(minutes=1)).isoformat(),
-            "minimum_bid_increment": "1.00",
+            "minimum_bid_increment": "100",
         },
     )
     assert response.status_code == 422
     assert "Auction end time must be after start time" in str(response.json()["detail"])
 
 
-def test_bid_decimal_precision_and_minimum_increment(
+def test_bid_rejects_fractional_tiyin_and_enforces_minimum_increment(
     client: TestClient,
     test_seller: AuthenticatedUser,
     test_user: AuthenticatedUser,
 ) -> None:
-    item = create_item(client, test_seller, starting_price="10.00")
+    """Pul birligi — tiyin. Undan maydasi yo'q, kasrli summa rad etiladi.
+
+    Ilgari bu test Decimal aniqligini (decimal_places=2) tekshirardi.
+    Endi pul butun tiyin: "1000.9" kabi kasrli qiymat umuman pul emas va
+    422 bilan rad etilishi kerak — jimgina yaxlitlanmasligi shart.
+    Minimal qadam tekshiruvi esa o'z kuchida qoladi.
+    """
+    # 10.00 so'm = 1000 tiyin, minimal qadam 0.01 so'm = 1 tiyin.
+    item = create_item(client, test_seller, starting_price="1000")
     auction = create_auction(
         client,
         test_seller,
         item["id"],
-        minimum_bid_increment="0.01",
+        minimum_bid_increment="1",
     )
 
-    too_precise_response = client.post(
+    fractional_response = client.post(
         f"/api/v1/bids/{auction['id']}",
         headers=test_user.headers,
-        json={"amount": "10.009"},
+        json={"amount": "1000.9"},
     )
-    assert too_precise_response.status_code == 422
+    assert fractional_response.status_code == 422
 
-    bid = create_bid(client, test_user, auction["id"], amount="10.01")
-    assert bid["amount"] == "10.01"
+    # Minimal qadamdan past bid — boshlang'ich narxga teng, qadam qo'shilmagan.
+    too_low_response = client.post(
+        f"/api/v1/bids/{auction['id']}",
+        headers=test_user.headers,
+        json={"amount": "1000"},
+    )
+    assert too_low_response.status_code == 400
+
+    bid = create_bid(client, test_user, auction["id"], amount="1001")
+    assert bid["amount"] == "1001"

@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
-from decimal import Decimal
 
+from sqlalchemy import BigInteger, ForeignKey
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import OrderStatus
+from app.money import Tiyin
 
 
 class Order(Base):
@@ -17,7 +17,8 @@ class Order(Base):
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True, nullable=False)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    final_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Pul — tiyinda (BIGINT). Batafsil: app/money/
+    final_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     status: Mapped[OrderStatus] = mapped_column(
         SqlEnum(OrderStatus, name="order_status"),
         default=OrderStatus.PENDING_PAYMENT,

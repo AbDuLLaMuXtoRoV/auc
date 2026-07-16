@@ -33,8 +33,8 @@ def test_create_and_close_auction(client: TestClient) -> None:
             "images": ["https://example.com/drill.jpg"],
             "location": "Tashkent",
             "item_location": "Tashkent warehouse",
-            "starting_price": "50.00",
-            "reserve_price": "55.00",
+            "starting_price": "5000",
+            "reserve_price": "5500",
         },
     )
     assert item_response.status_code == 201
@@ -47,7 +47,7 @@ def test_create_and_close_auction(client: TestClient) -> None:
             "item_id": item_response.json()["id"],
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "5.00",
+            "minimum_bid_increment": "500",
         },
     )
     assert auction_response.status_code == 201
@@ -56,7 +56,7 @@ def test_create_and_close_auction(client: TestClient) -> None:
     bid_response = client.post(
         f"/api/v1/auctions/{auction['id']}/bids",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "60.00"},
+        json={"amount": "6000"},
     )
     assert bid_response.status_code == 201
 
@@ -79,8 +79,8 @@ def test_close_auction_marks_reserve_not_met(client: TestClient) -> None:
         json={
             "title": "Vintage turntable",
             "condition": "used",
-            "starting_price": "50.00",
-            "reserve_price": "100.00",
+            "starting_price": "5000",
+            "reserve_price": "10000",
         },
     )
     assert item_response.status_code == 201
@@ -93,7 +93,7 @@ def test_close_auction_marks_reserve_not_met(client: TestClient) -> None:
             "item_id": item_response.json()["id"],
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "5.00",
+            "minimum_bid_increment": "500",
         },
     )
     assert auction_response.status_code == 201
@@ -102,7 +102,7 @@ def test_close_auction_marks_reserve_not_met(client: TestClient) -> None:
     bid_response = client.post(
         f"/api/v1/auctions/{auction['id']}/bids",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "60.00"},
+        json={"amount": "6000"},
     )
     assert bid_response.status_code == 201
 
@@ -123,7 +123,7 @@ def test_auction_can_only_be_created_for_draft_or_scheduled_item(client: TestCli
         json={
             "title": "Already active item",
             "condition": "used",
-            "starting_price": "25.00",
+            "starting_price": "2500",
         },
     )
     assert item_response.status_code == 201
@@ -144,7 +144,7 @@ def test_auction_can_only_be_created_for_draft_or_scheduled_item(client: TestCli
             "item_id": item_id,
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "5.00",
+            "minimum_bid_increment": "500",
         },
     )
     assert auction_response.status_code == 400

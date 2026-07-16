@@ -8,6 +8,7 @@ Create Date: 2026-06-21 00:03:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -36,7 +37,13 @@ def upgrade() -> None:
     op.add_column("users", sa.Column("seller_rating", sa.Numeric(3, 2), nullable=True))
     op.add_column("users", sa.Column("seller_rating_count", sa.Integer(), nullable=True))
     op.add_column("users", sa.Column("is_verified", sa.Boolean(), nullable=True))
-    op.add_column("users", sa.Column("role", sa.Enum(name="user_role"), nullable=True))
+    # create_type=False: tur allaqachon mavjud (001/yuqorida yaratilgan).
+    # sa.Enum(name=...) qiymatlarsiz ishlatilsa SQLAlchemy uni yangi deb
+    # bilib `CREATE TYPE ... AS ENUM ()` yuboradi va yiqiladi.
+    op.add_column(
+        "users",
+        sa.Column("role", postgresql.ENUM(name="user_role", create_type=False), nullable=True),
+    )
     op.execute("UPDATE users SET seller_rating = 0 WHERE seller_rating IS NULL")
     op.execute("UPDATE users SET seller_rating_count = 0 WHERE seller_rating_count IS NULL")
     op.execute("UPDATE users SET is_verified = FALSE WHERE is_verified IS NULL")
@@ -113,8 +120,14 @@ def upgrade() -> None:
         sa.Column("buyer_id", sa.Integer(), nullable=False),
         sa.Column("seller_id", sa.Integer(), nullable=False),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
-        sa.Column("status", sa.Enum(name="order_status"), nullable=False),
-        sa.Column("payment_status", sa.Enum(name="payment_status"), nullable=False),
+        sa.Column(
+            "status", postgresql.ENUM(name="order_status", create_type=False), nullable=False
+        ),
+        sa.Column(
+            "payment_status",
+            postgresql.ENUM(name="payment_status", create_type=False),
+            nullable=False,
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["auction_id"], ["auctions.id"]),

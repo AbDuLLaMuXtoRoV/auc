@@ -34,7 +34,7 @@ def _create_auction(
         json={
             "title": "Socket set",
             "condition": "used",
-            "starting_price": "20.00",
+            "starting_price": "2000",
         },
     )
     assert item_response.status_code == 201
@@ -47,7 +47,7 @@ def _create_auction(
             "item_id": item_response.json()["id"],
             "start_time": (now + start_delta).isoformat(),
             "end_time": (now + end_delta).isoformat(),
-            "minimum_bid_increment": "5.00",
+            "minimum_bid_increment": "500",
         },
     )
     assert auction_response.status_code == 201
@@ -72,50 +72,50 @@ def test_bid_rules(client: TestClient) -> None:
     own_bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {seller_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
     assert own_bid_response.status_code == 400
 
     low_bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "21.00"},
+        json={"amount": "2100"},
     )
     assert low_bid_response.status_code == 400
 
     valid_bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
     assert valid_bid_response.status_code == 201
-    assert valid_bid_response.json()["amount"] == "25.00"
+    assert valid_bid_response.json()["amount"] == "2500"
 
     auction_response = client.get(f"/api/v1/auctions/{auction_id}")
     assert auction_response.status_code == 200
     auction = auction_response.json()
-    assert auction["current_price"] == "25.00"
+    assert auction["current_price"] == "2500"
     assert auction["highest_bidder_id"] == valid_bid_response.json()["bidder_id"]
     assert auction["winning_bid_id"] == valid_bid_response.json()["id"]
 
     second_low_bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "29.00"},
+        json={"amount": "2900"},
     )
     assert second_low_bid_response.status_code == 400
 
     repeat_bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "30.00"},
+        json={"amount": "3000"},
     )
     assert repeat_bid_response.status_code == 201
 
     updated_auction_response = client.get(f"/api/v1/auctions/{auction_id}")
     assert updated_auction_response.status_code == 200
     updated_auction = updated_auction_response.json()
-    assert updated_auction["current_price"] == "30.00"
+    assert updated_auction["current_price"] == "3000"
     assert updated_auction["highest_bidder_id"] == repeat_bid_response.json()["bidder_id"]
 
 
@@ -127,7 +127,7 @@ def test_bid_rejected_when_auction_is_not_active(client: TestClient) -> None:
     response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
 
     assert response.status_code == 400
@@ -147,7 +147,7 @@ def test_bid_rejected_when_auction_has_ended(client: TestClient) -> None:
     response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
 
     assert response.status_code == 400
@@ -181,7 +181,7 @@ def test_scheduled_auction_activates_when_bid_is_placed_after_start_time(
     bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
     assert bid_response.status_code == 201
 
@@ -206,7 +206,7 @@ def test_anti_sniping_extends_auction_end_time(client: TestClient) -> None:
     bid_response = client.post(
         f"/api/v1/bids/{auction_id}",
         headers={"Authorization": f"Bearer {bidder_token}"},
-        json={"amount": "25.00"},
+        json={"amount": "2500"},
     )
     assert bid_response.status_code == 201
 

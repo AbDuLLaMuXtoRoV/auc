@@ -34,7 +34,7 @@ def _create_item(client: TestClient, seller_token: str, title: str = "Bench vise
     response = client.post(
         "/api/v1/items",
         headers={"Authorization": f"Bearer {seller_token}"},
-        json={"title": title, "condition": "used", "starting_price": "40.00"},
+        json={"title": title, "condition": "used", "starting_price": "4000"},
     )
     assert response.status_code == 201
     return response.json()
@@ -49,7 +49,7 @@ def _create_auction(client: TestClient, seller_token: str, item_id: int) -> dict
             "item_id": item_id,
             "start_time": (now - timedelta(minutes=1)).isoformat(),
             "end_time": (now + timedelta(days=1)).isoformat(),
-            "minimum_bid_increment": "5.00",
+            "minimum_bid_increment": "500",
         },
     )
     assert response.status_code == 201
@@ -127,7 +127,7 @@ def test_admin_endpoints_and_permissions(client: TestClient, db_session: Session
     bid_response = client.post(
         f"/api/v1/bids/{auction['id']}",
         headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"amount": "45.00"},
+        json={"amount": "4500"},
     )
     assert bid_response.status_code == 201
 
@@ -165,7 +165,7 @@ def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Se
     bid_response = client.post(
         f"/api/v1/bids/{auction['id']}",
         headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"amount": "45.00"},
+        json={"amount": "4500"},
     )
     assert bid_response.status_code == 201
 
@@ -190,4 +190,4 @@ def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Se
     stats = stats_response.json()
     assert stats["total_users"] == 3
     assert stats["total_completed_orders"] == 0
-    assert stats["total_sales_amount"] == "0.00"
+    assert stats["total_sales_amount"] == "0"

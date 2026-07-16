@@ -8,6 +8,7 @@ Create Date: 2026-06-21 00:02:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -18,10 +19,23 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    item_condition = sa.Enum("NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS", name="item_condition")
-    item_status = sa.Enum("DRAFT", "LISTED", "ARCHIVED", name="item_status")
-    auction_status = sa.Enum("DRAFT", "ACTIVE", "ENDED", "CANCELLED", name="auction_status")
-    bid_status = sa.Enum("VALID", "OUTBID", "CANCELLED", name="bid_status")
+    # create_type=False MAJBURIY: turlar quyida aniq (checkfirst bilan)
+    # yaratiladi. Oddiy sa.Enum ishlatilsa, create_table ustunni ko'rib
+    # CREATE TYPE ni IKKINCHI marta yuboradi — endi checkfirst'siz — va
+    # "type already exists" xatosi bilan yiqiladi. Ya'ni toza bazada
+    # `alembic upgrade head` umuman ishlamaydi.
+    item_condition = postgresql.ENUM(
+        "NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS", name="item_condition", create_type=False
+    )
+    item_status = postgresql.ENUM(
+        "DRAFT", "LISTED", "ARCHIVED", name="item_status", create_type=False
+    )
+    auction_status = postgresql.ENUM(
+        "DRAFT", "ACTIVE", "ENDED", "CANCELLED", name="auction_status", create_type=False
+    )
+    bid_status = postgresql.ENUM(
+        "VALID", "OUTBID", "CANCELLED", name="bid_status", create_type=False
+    )
 
     item_condition.create(op.get_bind(), checkfirst=True)
     item_status.create(op.get_bind(), checkfirst=True)

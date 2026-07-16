@@ -54,7 +54,7 @@ def test_item_crud_filters_permissions_and_upload(
             "condition": "used",
             "location": "Tashkent",
             "item_location": "Tashkent warehouse",
-            "starting_price": "50.00",
+            "starting_price": "5000",
         },
     )
     assert create_response.status_code == 201

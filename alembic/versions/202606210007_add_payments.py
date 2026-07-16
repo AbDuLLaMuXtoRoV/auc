@@ -8,6 +8,7 @@ Create Date: 2026-06-21 00:07:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -26,7 +27,9 @@ def upgrade() -> None:
         sa.Column("buyer_id", sa.Integer(), nullable=False),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
         sa.Column("currency", sa.String(length=3), nullable=False),
-        sa.Column("status", sa.Enum(name="payment_status"), nullable=False),
+        sa.Column(
+            "status", postgresql.ENUM(name="payment_status", create_type=False), nullable=False
+        ),
         sa.Column("provider", sa.String(length=80), nullable=False),
         sa.Column("provider_payment_id", sa.String(length=255), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
