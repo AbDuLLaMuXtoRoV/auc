@@ -42,6 +42,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/bazart_test
+      # Testlar shu bazaga ulanadi (tests/conftest.py). CI'da mahalliy
+      # Postgres konflikti yo'q, shuning uchun standart 5432.
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/bazart_test
       REDIS_URL: redis://localhost:6379/0
       SECRET_KEY: ci-test-secret-key-not-for-production-0123456789abcdef
       ENVIRONMENT: test

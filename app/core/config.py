@@ -19,7 +19,9 @@ class Settings(BaseSettings):
 
     app_name: str = "Bazart API"
     environment: Environment = "local"
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/bazart"
+    # 5433 — docker compose'dagi Postgres host porti (5432 mahalliy
+    # o'rnatilgan Postgres tomonidan band bo'lishi mumkin).
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/bazart"
     secret_key: str = Field(default=INSECURE_DEFAULT_SECRET_KEY, min_length=32)
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14

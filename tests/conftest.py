@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -5,9 +6,9 @@ from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.db import base  # noqa: F401
 from app.db.session import get_db
@@ -16,7 +17,22 @@ from app.models.base import Base
 from app.models.enums import UserRole
 from app.repositories.user_repository import UserRepository
 
-SQLALCHEMY_DATABASE_URL = "sqlite+pysqlite:///:memory:"
+# REAL Postgres — SQLite EMAS.
+#
+# Ilgari bu yerda sqlite+pysqlite:///:memory: turardi. SQLite `FOR UPDATE`,
+# native ENUM, BIGINT/Numeric semantikasi va tranzaksiya izolyatsiyasida
+# Postgres'dan farq qiladi. Pul va auksion logikasini SQLite'da sinash
+# yolg'on ishonch beradi: qulf yozilmagan bo'lsa ham test yashil bo'ladi.
+#
+# Baza ko'tarilgan bo'lishi kerak: docker compose up -d db
+#
+# Port 5433 (5432 emas): mahalliy o'rnatilgan Postgres 5432 ni egallab
+# turishi mumkin, u holda testlar jimgina noto'g'ri serverga ulanadi.
+# CI'da TEST_DATABASE_URL env orqali beriladi.
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql+psycopg://postgres:postgres@localhost:5433/bazart_test",
+)
 TEST_PASSWORD = "Password1"
 
 
@@ -30,22 +46,70 @@ class AuthenticatedUser:
     headers: dict[str, str]
 
 
-@pytest.fixture
-def db_session() -> Generator[Session]:
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
+def _ensure_test_database_exists(url: str) -> None:
+    """Test bazasi yo'q bo'lsa yaratadi.
 
+    `postgres` xizmat bazasiga ulanib CREATE DATABASE qiladi — shu sababli
+    AUTOCOMMIT kerak (CREATE DATABASE tranzaksiya ichida ishlamaydi).
+    """
+    target = make_url(url)
+    admin_engine = create_engine(target.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        with admin_engine.connect() as conn:
+            exists = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                {"name": target.database},
+            ).scalar()
+            if not exists:
+                conn.execute(text(f'CREATE DATABASE "{target.database}"'))
+    finally:
+        admin_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def db_engine() -> Generator[Engine]:
+    """Sessiya davomida bitta engine + sxema bir marta quriladi.
+
+    Har test uchun create_all/drop_all qilish Postgres'da sekin (native
+    ENUM turlari qayta yaratiladi). O'rniga sxema bir marta quriladi,
+    tozalash TRUNCATE bilan qilinadi.
+    """
+    try:
+        _ensure_test_database_exists(TEST_DATABASE_URL)
+    except OSError as exc:  # ulanib bo'lmadi
+        pytest.exit(
+            f"Test Postgres'iga ulanib bo'lmadi ({TEST_DATABASE_URL}): {exc}\n"
+            "Bazani ko'taring: docker compose up -d db",
+            returncode=1,
+        )
+
+    engine = create_engine(TEST_DATABASE_URL)
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine: Engine) -> Generator[Session]:
+    """Har test toza bazadan boshlanadi.
+
+    TRUNCATE ... RESTART IDENTITY CASCADE — ID'lar 1 dan boshlanadi,
+    ya'ni testlar bir-biriga ID orqali ta'sir qilmaydi.
+    """
+    tables = ", ".join(f'"{table.name}"' for table in Base.metadata.sorted_tables)
+    if tables:
+        with db_engine.begin() as conn:
+            conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture

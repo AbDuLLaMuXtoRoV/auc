@@ -67,16 +67,18 @@ Biznes mantiq endpoint ichida yozilmaydi — service'ga.
 ## Komandalar
 
 ```bash
+docker compose up -d db redis minio       # testlardan OLDIN — testlar real Postgres talab qiladi
 .venv/Scripts/python.exe -m pytest        # 36 test
 .venv/Scripts/python.exe -m pytest tests/test_bids.py
-ruff check .
-ruff format .
+ruff check . && ruff format --check .     # CI shu ikkalasini tekshiradi
 alembic upgrade head
 alembic revision --autogenerate -m "..."
-docker compose up -d db                   # faqat Postgres
-docker compose up --build                 # API + Postgres
+docker compose up --build                 # butun stek
 uvicorn app.main:app --reload
 ```
+
+**Portlar:** Postgres host'da **5433** (5432 emas — mahalliy o'rnatilgan Postgres band qilishi mumkin),
+Redis 6379, MinIO 9000 (API) / 9001 (console).
 
 ## Kod uslubi
 
@@ -88,10 +90,13 @@ uvicorn app.main:app --reload
 
 ## Test qoidalari
 
-- Hozir `conftest.py` **SQLite in-memory** ishlatadi → `FOR UPDATE` sinab bo'lmaydi, race testi yo'q.
-  **Faza A'da Postgres'ga ko'chiriladi.**
+- Testlar **real Postgres 16** da ishlaydi (`docker compose up -d db`, host port **5433**).
+  SQLite'ga QAYTMA: u `FOR UPDATE`, native ENUM va izolyatsiyada Postgres'dan farq qiladi —
+  qulf yozilmagan bo'lsa ham test yashil bo'lib, yolg'on ishonch beradi.
+- Test bazasi (`bazart_test`) avtomatik yaratiladi; har test TRUNCATE bilan tozalanadi.
 - Har pul/auksion o'zgarishi uchun test majburiy.
-- Atomik bid kodini SQLite'da "sinab ko'rdim" deb hisoblama — bu yolg'on ishonch.
+- Race condition testi hali YO'Q — `db_session` bitta sessiyani ulashadi.
+  Parallel bid testi uchun alohida ulanishlar kerak (Faza C).
 
 ## Xavfsizlik
 
