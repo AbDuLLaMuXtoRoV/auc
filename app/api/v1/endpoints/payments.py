@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.core.dependencies import CurrentUser, DbSession
 from app.models.payment import Payment, PaymentMethod
 from app.schemas.payment import (
@@ -42,13 +43,18 @@ def create_payment_intent(
     return PaymentService(db).create_payment_intent(payload, current_user)
 
 
-@router.post("/{payment_id}/confirm-mock", response_model=PaymentRead)
-def confirm_mock_payment(
-    payment_id: int,
-    current_user: CurrentUser,
-    db: DbSession,
-) -> Payment:
-    return PaymentService(db).confirm_mock_payment(payment_id, current_user)
+# Mock tasdiqlash endpointi prod/staging'da UMUMAN ro'yxatdan o'tmaydi —
+# u yerda OpenAPI'da ham ko'rinmaydi. Servis qatlamida ham tekshiruv bor
+# (ikki qatlamli himoya): app/services/payment_service.py:confirm_mock_payment.
+if settings.allow_mock_payments:
+
+    @router.post("/{payment_id}/confirm-mock", response_model=PaymentRead)
+    def confirm_mock_payment(
+        payment_id: int,
+        current_user: CurrentUser,
+        db: DbSession,
+    ) -> Payment:
+        return PaymentService(db).confirm_mock_payment(payment_id, current_user)
 
 
 @router.get("/orders/{order_id}", response_model=PaymentRead)

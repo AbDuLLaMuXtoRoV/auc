@@ -1,13 +1,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.enums import OrderStatus, PaymentStatus, UserRole
 from app.models.payment import Payment
 from app.models.user import User
 from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.schemas.payment import PaymentIntentCreate
-from app.services.payment_providers import get_payment_provider
+from app.services.payment_providers import PaymentProviderError, get_payment_provider
 
 
 class PaymentService:
@@ -33,7 +34,13 @@ class PaymentService:
                 detail="Order is not pending payment",
             )
 
-        provider = get_payment_provider(payload.provider)
+        try:
+            provider = get_payment_provider(payload.provider)
+        except PaymentProviderError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            ) from exc
+
         provider_result = provider.create_payment(amount=payload.amount, currency=payload.currency)
         payment = self.payments.create(
             order_id=order.id,
@@ -50,6 +57,15 @@ class PaymentService:
         return payment
 
     def confirm_mock_payment(self, payment_id: int, actor: User) -> Payment:
+        """Mock to'lovni tasdiqlaydi. FAQAT local/test muhitida.
+
+        Bu metod real pul harakatisiz to'lovni PAID qiladi. Prod'da ochiq
+        qolsa — istalgan xaridor bitta so'rov bilan tovarni bepul oladi.
+        Shu sababli muhit tekshiruvi eng birinchi qatorda turadi.
+        """
+        if not settings.allow_mock_payments:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
         payment = self.payments.get(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
@@ -61,7 +77,13 @@ class PaymentService:
                 detail="Payment has no provider payment id",
             )
 
-        provider = get_payment_provider(payment.provider)
+        try:
+            provider = get_payment_provider(payment.provider)
+        except PaymentProviderError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            ) from exc
+
         provider_result = provider.confirm_payment(provider_payment_id=payment.provider_payment_id)
         payment = self.payments.update_status(payment, provider_result.status)
 
