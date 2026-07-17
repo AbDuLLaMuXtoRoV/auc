@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.auction import Auction
 from app.models.bid import Bid
-from app.models.enums import AuctionStatus, BidStatus
+from app.models.enums import AuctionStatus, BidStatus, ItemStatus
 from app.models.user import User
+from app.repositories.auction_repository import AuctionRepository
 from app.schemas.bid import BidCreate
-from app.services.auction_service import AuctionService
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -19,38 +19,82 @@ def _as_utc(value: datetime) -> datetime:
 
 
 class BidService:
-    """Auction bid workflow.
+    """Bid qo'yish oqimi.
 
-    This is the extension point for max bid / proxy bidding. A later implementation can
-    replace direct winning-bid updates with proxy bid calculation while keeping routes stable.
+    Proxy/max-bid uchun kengaytirish nuqtasi shu yerda.
     """
 
     def __init__(self, db: Session) -> None:
         self.db = db
+        self.auctions = AuctionRepository(db)
 
-    def place_bid(self, auction: Auction, bidder: User, payload: BidCreate) -> Bid:
-        # TODO: Support proxy/max bids and bid retraction policies.
-        auction = AuctionService(self.db).activate_if_started(auction)
-        self._validate_bid(auction, bidder, payload)
+    def place_bid(self, auction_id: int, bidder: User, payload: BidCreate) -> Bid:
+        """Bid qo'yadi. ATOMIK — race condition'siz.
 
-        bid = Bid(auction_id=auction.id, bidder_id=bidder.id, amount=payload.amount)
-        previous_winner = auction.winning_bid
-        if previous_winner is not None:
-            previous_winner.status = BidStatus.OUTBID
-            self.db.add(previous_winner)
+        Butun mantiq BITTA tranzaksiyada:
+          1) auksion qatorini FOR UPDATE bilan qulflab qayta o'qiydi
+          2) validatsiya (qulf ostida — o'qilgan narx eskirmaydi)
+          3) yozish
+          4) bitta commit
 
-        auction.current_price = payload.amount
-        auction.winning_bid = bid
-        auction.highest_bidder_id = bidder.id
-        auction.updated_at = datetime.now(UTC)
+        Qulf o'rnatilgach commit qilinmaydi: har commit qulfni bo'shatadi
+        va "o'qi -> tekshir -> yoz" oynasi yana ochilib qoladi. Aynan shu
+        sababli auksionni aktivlashtirish ham bu yerda commit'siz
+        bajariladi (AuctionService.activate_if_started commit qiladi —
+        u bu oqim uchun yaroqsiz).
+        """
+        # TODO: proxy/max bid — docs/AUCTION_ENGINE.md
+        try:
+            auction = self.auctions.get_for_update(auction_id)
+            if auction is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+                )
 
-        self._apply_soft_close_extension(auction)
+            self._activate_if_started_locked(auction)
+            self._validate_bid(auction, bidder, payload)
 
-        self.db.add(bid)
-        self.db.add(auction)
-        self.db.commit()
+            bid = Bid(auction_id=auction.id, bidder_id=bidder.id, amount=payload.amount)
+            previous_winner = auction.winning_bid
+            if previous_winner is not None:
+                previous_winner.status = BidStatus.OUTBID
+                self.db.add(previous_winner)
+
+            auction.current_price = payload.amount
+            auction.winning_bid = bid
+            auction.highest_bidder_id = bidder.id
+            auction.updated_at = datetime.now(UTC)
+
+            self._apply_soft_close_extension(auction)
+
+            self.db.add(bid)
+            self.db.add(auction)
+            self.db.commit()
+        except Exception:
+            # Qulfni darhol bo'shatish — kutayotgan bidlar navbatda
+            # keraksiz turmasin.
+            self.db.rollback()
+            raise
+
         self.db.refresh(bid)
         return bid
+
+    def _activate_if_started_locked(self, auction: Auction) -> None:
+        """SCHEDULED -> ACTIVE, commit QILMASDAN.
+
+        AuctionService.activate_if_started() bilan bir xil qoida, lekin u
+        commit qiladi va shu bilan bid oqimidagi FOR UPDATE qulfini
+        bo'shatib yuboradi.
+        """
+        now = datetime.now(UTC)
+        if (
+            auction.status == AuctionStatus.SCHEDULED
+            and _as_utc(auction.start_time) <= now
+            and _as_utc(auction.end_time) > now
+        ):
+            auction.status = AuctionStatus.ACTIVE
+            auction.item.status = ItemStatus.ACTIVE
+            self.db.add(auction)
 
     def _validate_bid(self, auction: Auction, bidder: User, payload: BidCreate) -> None:
         if auction.seller_id == bidder.id:
@@ -84,10 +128,12 @@ class BidService:
             )
 
     def _apply_soft_close_extension(self, auction: Auction) -> None:
-        """Future anti-sniping hook.
+        """Anti-sniping: tugashga oz qolganda kelgan bid muddatni uzaytiradi.
 
-        Later this can extend auction.end_time when a valid bid lands near the close.
-        The method is intentionally a no-op in the initial skeleton.
+        Tugashga `soft_close_window_seconds` (120s) yoki kamroq qolganda
+        valid bid kelsa, `end_time` `soft_close_extension_seconds` (120s)
+        ga suriladi. Maqsad: oxirgi soniyada urib olishning (sniping)
+        oldini olish — har kim javob berishga ulguradi.
         """
         now = datetime.now(UTC)
         end_time = _as_utc(auction.end_time)

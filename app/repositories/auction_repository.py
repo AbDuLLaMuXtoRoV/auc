@@ -56,6 +56,24 @@ class AuctionRepository:
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)
 
+    def get_for_update(self, auction_id: int) -> Auction | None:
+        """Auksion qatorini QULFLAB o'qiydi (SELECT ... FOR UPDATE).
+
+        Bid oqimi uchun. Qulf tranzaksiya tugaguncha (commit/rollback)
+        ushlanadi — shu vaqt ichida boshqa tranzaksiya shu qatorni
+        o'qiy olmaydi, navbatda kutadi.
+
+        Qulfsiz "o'qi -> tekshir -> yoz" ketma-ketligi lost update beradi:
+        ikki bid bir xil current_price ni o'qiydi, ikkalasi ham
+        validatsiyadan o'tadi, oxirgi yozuvchi g'olib bo'ladi — natijada
+        pastroq taklif yutib, yuqori bid yo'qoladi.
+
+        MUHIM: chaqiruvchi qulf o'rnatilgandan keyin commit QILMASLIGI
+        kerak — har qanday commit qulfni bo'shatadi.
+        """
+        statement = select(Auction).where(Auction.id == auction_id).with_for_update()
+        return self.db.scalars(statement).one_or_none()
+
     def item_has_auction(self, item_id: int) -> bool:
         statement = select(Auction.id).where(Auction.item_id == item_id)
         return self.db.scalar(statement) is not None

@@ -95,7 +95,4 @@ def create_bid(
     current_user: CurrentUser,
     db: DbSession,
 ) -> Bid:
-    auction = AuctionRepository(db).get(auction_id)
-    if auction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found")
-    return BidService(db).place_bid(auction, current_user, payload)
+    return BidService(db).place_bid(auction_id, current_user, payload)
