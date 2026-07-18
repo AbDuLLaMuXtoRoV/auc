@@ -34,6 +34,10 @@ class Auction(Base):
     highest_bidder_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=True
     )
+    # Proxy bidding siri: joriy leader to'lashga tayyor MAKSIMAL summa (tiyin).
+    # HECH QACHON API'da oshkor bo'lmaydi (AuctionRead'da yo'q) — oshkor bo'lsa
+    # raqib uni bir qadam bilan yengib o'tadi.
+    high_bidder_max: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
     winner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
     winning_bid_id: Mapped[int | None] = mapped_column(
         ForeignKey("bids.id", name="fk_auctions_winning_bid_id_bids", use_alter=True),

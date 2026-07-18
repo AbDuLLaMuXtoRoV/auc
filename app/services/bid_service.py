@@ -42,8 +42,13 @@ class BidService:
         va "o'qi -> tekshir -> yoz" oynasi yana ochilib qoladi. Aynan shu
         sababli auksionni aktivlashtirish ham bu yerda commit'siz
         bajariladi (_activate_if_started_locked).
+
+        PROXY BIDDING (orqaga mos):
+          - max_amount berilmasa — oddiy bid: ko'ringan narx = amount.
+          - max_amount berilsa — keyingi raqib kelганда tizim leader nomidan
+            avtomatik bir qadam yuqoriga ko'taradi (leader max'igacha).
+        high_bidder_max HECH QACHON javobda oshkor bo'lmaydi.
         """
-        # TODO: proxy/max bid — docs/AUCTION_ENGINE.md
         try:
             auction = self.auctions.get_for_update(auction_id)
             if auction is None:
@@ -54,20 +59,10 @@ class BidService:
             self._activate_if_started_locked(auction)
             self._validate_bid(auction, bidder, payload)
 
-            bid = Bid(auction_id=auction.id, bidder_id=bidder.id, amount=payload.amount)
-            previous_winner = auction.winning_bid
-            if previous_winner is not None:
-                previous_winner.status = BidStatus.OUTBID
-                self.db.add(previous_winner)
-
-            auction.current_price = payload.amount
-            auction.winning_bid = bid
-            auction.highest_bidder_id = bidder.id
+            returned_bid = self._resolve_bid(auction, bidder, payload)
             auction.updated_at = datetime.now(UTC)
-
             self._apply_soft_close_extension(auction)
 
-            self.db.add(bid)
             self.db.add(auction)
             self.db.commit()
         except Exception:
@@ -76,8 +71,81 @@ class BidService:
             self.db.rollback()
             raise
 
-        self.db.refresh(bid)
-        return bid
+        self.db.refresh(returned_bid)
+        return returned_bid
+
+    def _resolve_bid(self, auction: Auction, bidder: User, payload: BidCreate) -> Bid:
+        """Proxy bidding yechimi. Chaqiruvchiga qaytariladigan Bid'ni beradi.
+
+        Uch holat:
+          A) Leader avtomatik himoyalanadi — leader max chaqiruvchining
+             ko'ringan bidini bir qadamdan ortiq qoplaydi. Chaqiruvchi bidi
+             OUTBID yoziladi, leader nomidan is_proxy=True bid qo'shiladi,
+             narx amount+step ga ko'tariladi, leader o'zgarmaydi.
+          B) Chaqiruvchi yangi leader bo'ladi — narx = uning ko'ringan bidi,
+             high_bidder_max = uning max_amount'i.
+
+        Har holatda winning_bid.amount == current_price bo'lib qoladi, shu
+        sababli close/order mantig'i o'zgarmaydi (yakuniy narx = winning bid).
+        """
+        amount = payload.amount
+        max_amount = payload.max_amount if payload.max_amount is not None else payload.amount
+        step = auction.minimum_bid_increment
+        leader_id = auction.highest_bidder_id
+        leader_max = auction.high_bidder_max
+
+        caller_bid = Bid(
+            auction_id=auction.id,
+            bidder_id=bidder.id,
+            amount=amount,
+            max_amount=max_amount,
+            is_proxy=False,
+            status=BidStatus.VALID,
+        )
+
+        leader_defends = (
+            leader_id is not None
+            and leader_id != bidder.id
+            and leader_max is not None
+            and leader_max >= amount + step
+        )
+
+        if leader_defends:
+            # Holat A: leader proxy himoyasi.
+            caller_bid.status = BidStatus.OUTBID
+            self.db.add(caller_bid)
+
+            new_price = amount + step  # leader_max >= amount+step tekshirildi
+            proxy_bid = Bid(
+                auction_id=auction.id,
+                bidder_id=leader_id,
+                amount=new_price,
+                max_amount=leader_max,
+                is_proxy=True,
+                status=BidStatus.VALID,
+            )
+            self._demote_current_winner(auction)
+            self.db.add(proxy_bid)
+            auction.current_price = new_price
+            auction.winning_bid = proxy_bid
+            # leader_id, high_bidder_max o'zgarmaydi
+            return caller_bid
+
+        # Holat B: chaqiruvchi yangi (yoki o'z narxini oshiruvchi) leader.
+        self._demote_current_winner(auction)
+        self.db.add(caller_bid)
+        auction.current_price = amount
+        auction.highest_bidder_id = bidder.id
+        auction.high_bidder_max = max_amount
+        auction.winning_bid = caller_bid
+        return caller_bid
+
+    def _demote_current_winner(self, auction: Auction) -> None:
+        """Joriy yutuvchi bidni OUTBID qiladi (yangi yutuvchi belgilanishidan oldin)."""
+        previous = auction.winning_bid
+        if previous is not None:
+            previous.status = BidStatus.OUTBID
+            self.db.add(previous)
 
     def _activate_if_started_locked(self, auction: Auction) -> None:
         """SCHEDULED -> ACTIVE, commit QILMASDAN.
