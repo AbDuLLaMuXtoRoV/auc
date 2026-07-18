@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, SmallInteger
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,6 +17,12 @@ class Auction(Base):
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
+    # Muddat: 3/5/7 kun (mahsulotning asosiy qoidasi — majburiy deadline).
+    # Nullable: to'g'ridan-to'g'ri end_time bilan yaratilgan auksionlar uchun
+    # (orqaga moslik). duration_days berilsa end_time = start_time + kun.
+    duration_days: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # Anti-sniping necha marta muddatni uzaytirgani — cheksiz cho'zilmasin.
+    extension_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     status: Mapped[AuctionStatus] = mapped_column(
         SqlEnum(AuctionStatus, name="auction_status"),
         default=AuctionStatus.SCHEDULED,

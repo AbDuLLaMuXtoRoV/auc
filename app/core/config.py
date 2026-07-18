@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     email_verification_token_expire_minutes: int = 60
     soft_close_window_seconds: int = 120
     soft_close_extension_seconds: int = 120
+    # Anti-sniping cheksiz cho'zilmasin: bir auksion ko'pi bilan shuncha marta
+    # uzaytiriladi. Undan keyin oxirgi soniyadagi bid muddatni surmaydi.
+    max_soft_close_extensions: int = 10
     local_upload_dir: str = "uploads"
     public_upload_url_prefix: str = "/uploads"
     algorithm: str = "HS256"

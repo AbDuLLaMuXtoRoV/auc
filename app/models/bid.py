@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,6 +11,12 @@ from app.money import Tiyin
 
 class Bid(Base):
     __tablename__ = "bids"
+
+    # G'olib bidni topish uchun kompozit index: auksion bo'yicha eng yuqori
+    # amount, teng bo'lsa eng erta created_at (get_highest_valid_bid).
+    __table_args__ = (
+        Index("ix_bids_auction_amount_created", "auction_id", "amount", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     auction_id: Mapped[int] = mapped_column(ForeignKey("auctions.id"), index=True, nullable=False)
