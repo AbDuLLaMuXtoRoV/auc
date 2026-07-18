@@ -65,10 +65,13 @@ Maqsad: keyingi ishlar uchun ishonchli zamin. Busiz atomiklikni **sinab bo'lmayd
 - [x] **Proxy bidding** (orqaga mos): `auctions.high_bidder_max`, `bids.max_amount`,
       `bids.is_proxy` + leader avtomatik himoyasi (migratsiya 202607170010)
 - [x] Test: `high_bidder_max`/`max_amount` API javobida **yo'q** (maxfiylik qalqoni)
-- [ ] Worker idempotentligi bo'yicha qo'shimcha test: ikki tik bir auksionni yopsa — bitta order
-- [ ] `duration_days` (3/5/7) majburiy qilish — hozir ixtiyoriy `end_time`
-- [ ] `extension_count` limiti (anti-sniping cheksiz cho'zilmasin)
-- [ ] Kompozit index: `bids(auction_id, amount DESC, created_at ASC)`
+- [x] Worker idempotentligi testi: 2 parallel yopish → aynan bitta order (`test_closer_idempotency`)
+- [x] `duration_days` (3/5/7) orqali muddat — orqaga mos (end_time ham ishlaydi)
+- [x] `extension_count` limiti — anti-sniping ko'pi bilan `max_soft_close_extensions` marta
+- [x] Kompozit index: `ix_bids_auction_amount_created` (auction_id, amount, created_at)
+
+**Faza C ✅ BAJARILDI.** Qolgan mayda ishlar (`duration_days` ni to'liq majburiy
+qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
 ## Faza D — Escrow, idempotentlik, audit
 
