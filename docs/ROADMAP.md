@@ -31,41 +31,41 @@ Real holatga asoslangan. `[x]` = kodda bor va ishlaydi. `[ ]` = yo'q.
 
 Maqsad: keyingi ishlar uchun ishonchli zamin. Busiz atomiklikni **sinab bo'lmaydi**.
 
-- [x] `confirm-mock` teshigi yopildi — muhit guard'i (`payment_service.py:66-67`), prod'da 404
+- [x] `confirm-mock` teshigi yopildi — muhit guard'i (`payment_service.py`), prod'da 404
 - [x] `get_payment_provider()` noma'lum nomga jimgina Mock qaytarmaydi — endi xato beradi
 - [x] SECRET_KEY guard (`config.py` model_validator)
-- [ ] **Testlarni Postgres'ga ko'chirish** — hozir SQLite in-memory → `FOR UPDATE` sinalmaydi.
-      Testcontainers yoki CI'dagi postgres servisi. **Bu Faza C uchun blokerdir.**
-- [ ] Redis qo'shish (docker-compose + settings) — rate limiting, cache, keyin real-time uchun
-- [ ] Rate limiting: login, register, bid, payment endpoint'lariga
-- [ ] CI (GitHub Actions): `ruff check .` + `pytest` (Postgres bilan) har PR'da
+- [x] **Testlarni Postgres'ga ko'chirish** — real Postgres 16 (host port 5433), `bazart_test`
+      avtomatik yaratiladi, TRUNCATE bilan tozalanadi. SQLite butunlay olib tashlandi
+- [x] Redis + MinIO qo'shildi (docker-compose + healthcheck) — kod hali ULAMAGAN
+- [x] Rate limiting: login (5/daq) va bid (10/daq) endpoint'lariga (`core/rate_limit.py`)
+- [x] CI (GitHub Actions): `ruff check` + `ruff format --check` + `pytest` (Postgres+Redis bilan)
 - [ ] Strukturaviy logging (JSON) + `request_id`
-- [ ] `PATCH /auctions/{id}/status` ni cheklash — hozir sotuvchi istalgan holatni qo'ya oladi
+- [x] `PATCH /auctions/{id}/status` cheklandi — state machine + sotuvchi faqat bekor qila oladi
 
-## Faza B — Pul: Numeric → BIGINT tiyin
+## Faza B — Pul: Numeric → BIGINT tiyin  ✅ BAJARILDI
 
-- [ ] Konvensiya: barcha pul `int` tiyin. `float` TAQIQ (linter qoidasi bilan qo'riqlash)
-- [ ] Alembic migratsiya: `items.starting_price/reserve_price`, `auctions.starting_price/
-      current_price/minimum_bid_increment/reserve_price`, `bids.amount`, `orders.final_price`,
-      `payments.amount` → `BIGINT` (qiymat × 100)
-- [ ] Modellar va Pydantic sxemalarini `int`ga o'tkazish
-- [ ] Formatlash yordamchisi: tiyin → "1 250 000 so'm" (faqat ko'rsatish qatlamida)
-- [ ] Chegara testlari: 0, 1 tiyin, juda katta summa, yaxlitlash
+- [x] Konvensiya: barcha pul `int` tiyin. `float` TAQIQ. Yagona manba: `app/money/`
+- [x] Alembic migratsiya (202607170009): 9 ustun `Numeric(12,2)` → `BIGINT` (qiymat × 100)
+      + DB CHECK (narx > 0)
+- [x] Modellar va Pydantic sxemalari `int`ga (`TiyinAmount` — JSON'da string)
+- [x] Buyer premium (BPS 800) + tiyin arifmetikasi `app/money/` da
+- [x] Chegara testlari + migratsiya testi (toza bazada + BIGINT tekshiruvi + `alembic check`)
 
 ## Faza C — Auksion dvigateli (mahsulotning yuragi)
 
-Faza A'dagi Postgres testlari **tayyor bo'lgandan keyin** boshlanadi.
-
-- [ ] **Atomik bid**: `select(Auction).where(...).with_for_update()` — validatsiyadan oldin
-- [ ] **Race condition testi**: N parallel bid → aynan bitta g'olib (Postgres'da)
-- [ ] **State machine**: `transition()` funksiyasi, ruxsat etilgan o'tishlar jadvali,
-      to'g'ridan-to'g'ri `status = ...` yozishni yo'q qilish
-- [ ] **Closer worker**: `end_time` o'tgan auksionlarni avtomatik yopish (`skip_locked=True`).
-      **Runner tanlovi ochiq:** ARQ / APScheduler / Celery — shu fazada hal qilinadi
-- [ ] Worker idempotentligi: ikki marta ishlasa — bitta order
-- [ ] `scheduled → active` avto-aktivatsiya worker orqali (hozir faqat bid kelganda)
-- [ ] **Proxy bidding**: `auctions.high_bidder_max`, `bids.max_amount` maydonlari + algoritm
-- [ ] Test: `high_bidder_max` API javobida **yo'q** (maxfiylik regressiya qalqoni)
+- [x] **Atomik bid**: `AuctionRepository.get_for_update()` — validatsiyadan oldin qulf,
+      butun oqim bitta tranzaksiyada
+- [x] **Race condition testi**: 12 parallel bid, alohida ulanishlar → aynan bitta g'olib.
+      Isbotlangan: qulf olib tashlansa test yiqiladi (`test_bid_concurrency.py`)
+- [x] **State machine** (`services/auction_state.py`): ruxsat etilgan o'tishlar jadvali,
+      qo'lda `status = ...` TAQIQ. close/activate/cancel — hammasi `assert_transition` orqali
+- [x] **Closer worker** (`services/auction_closer.py`): `end_time` o'tgan auksionlarni
+      avtomatik yopadi, FastAPI lifespan startup'da (APScheduler EMAS — oddiy asyncio loop)
+- [x] `scheduled → active` avto-aktivatsiya (bid kelganda, qulf ostida commit'siz)
+- [x] **Proxy bidding** (orqaga mos): `auctions.high_bidder_max`, `bids.max_amount`,
+      `bids.is_proxy` + leader avtomatik himoyasi (migratsiya 202607170010)
+- [x] Test: `high_bidder_max`/`max_amount` API javobida **yo'q** (maxfiylik qalqoni)
+- [ ] Worker idempotentligi bo'yicha qo'shimcha test: ikki tik bir auksionni yopsa — bitta order
 - [ ] `duration_days` (3/5/7) majburiy qilish — hozir ixtiyoriy `end_time`
 - [ ] `extension_count` limiti (anti-sniping cheksiz cho'zilmasin)
 - [ ] Kompozit index: `bids(auction_id, amount DESC, created_at ASC)`
