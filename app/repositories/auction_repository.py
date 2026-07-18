@@ -24,6 +24,7 @@ class AuctionRepository:
             seller_id=seller.id,
             start_time=payload.start_time,
             end_time=payload.end_time,
+            duration_days=payload.duration_days,
             status=status,
             starting_price=item.starting_price,
             current_price=item.starting_price,
