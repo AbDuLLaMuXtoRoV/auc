@@ -1,5 +1,3 @@
-from datetime import UTC, datetime
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -77,17 +75,3 @@ class AuctionRepository:
     def item_has_auction(self, item_id: int) -> bool:
         statement = select(Auction.id).where(Auction.item_id == item_id)
         return self.db.scalar(statement) is not None
-
-    def update_status(self, auction: Auction, status: AuctionStatus) -> Auction:
-        auction.status = status
-        self.db.add(auction)
-        self.db.commit()
-        self.db.refresh(auction)
-        return auction
-
-    def save(self, auction: Auction) -> Auction:
-        auction.updated_at = datetime.now(UTC)
-        self.db.add(auction)
-        self.db.commit()
-        self.db.refresh(auction)
-        return auction

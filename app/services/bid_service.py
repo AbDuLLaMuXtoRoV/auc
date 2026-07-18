@@ -10,6 +10,7 @@ from app.models.enums import AuctionStatus, BidStatus, ItemStatus
 from app.models.user import User
 from app.repositories.auction_repository import AuctionRepository
 from app.schemas.bid import BidCreate
+from app.services.auction_state import assert_transition
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -40,8 +41,7 @@ class BidService:
         Qulf o'rnatilgach commit qilinmaydi: har commit qulfni bo'shatadi
         va "o'qi -> tekshir -> yoz" oynasi yana ochilib qoladi. Aynan shu
         sababli auksionni aktivlashtirish ham bu yerda commit'siz
-        bajariladi (AuctionService.activate_if_started commit qiladi —
-        u bu oqim uchun yaroqsiz).
+        bajariladi (_activate_if_started_locked).
         """
         # TODO: proxy/max bid — docs/AUCTION_ENGINE.md
         try:
@@ -82,9 +82,9 @@ class BidService:
     def _activate_if_started_locked(self, auction: Auction) -> None:
         """SCHEDULED -> ACTIVE, commit QILMASDAN.
 
-        AuctionService.activate_if_started() bilan bir xil qoida, lekin u
-        commit qiladi va shu bilan bid oqimidagi FOR UPDATE qulfini
-        bo'shatib yuboradi.
+        Auksion boshlanish vaqti o'tgan bo'lsa aktivlashtiradi. Commit
+        qilinmaydi — aks holda bid oqimidagi FOR UPDATE qulfi bo'shab,
+        race condition oynasi ochilib qoladi.
         """
         now = datetime.now(UTC)
         if (
@@ -92,6 +92,7 @@ class BidService:
             and _as_utc(auction.start_time) <= now
             and _as_utc(auction.end_time) > now
         ):
+            assert_transition(auction.status, AuctionStatus.ACTIVE)
             auction.status = AuctionStatus.ACTIVE
             auction.item.status = ItemStatus.ACTIVE
             self.db.add(auction)

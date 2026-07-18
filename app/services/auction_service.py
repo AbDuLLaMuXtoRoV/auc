@@ -12,6 +12,11 @@ from app.repositories.auction_repository import AuctionRepository
 from app.repositories.bid_repository import BidRepository
 from app.schemas.auction import AuctionCreate
 from app.schemas.order import OrderRead
+from app.services.auction_state import (
+    SELLER_ALLOWED_TARGETS,
+    InvalidAuctionTransition,
+    assert_transition,
+)
 from app.services.order_service import OrderService
 
 
@@ -46,51 +51,119 @@ class AuctionService:
         )
         return self.auctions.create(seller, item, payload, auction_status)
 
-    def activate_if_started(self, auction: Auction) -> Auction:
-        now = datetime.now(UTC)
-        if (
-            auction.status == AuctionStatus.SCHEDULED
-            and _as_utc(auction.start_time) <= now
-            and _as_utc(auction.end_time) > now
-        ):
-            auction.status = AuctionStatus.ACTIVE
-            auction.item.status = ItemStatus.ACTIVE
-            return self.auctions.save(auction)
+    def set_status_by_seller(self, auction_id: int, seller: User, target: AuctionStatus) -> Auction:
+        """Sotuvchi qo'lda holat o'zgartiradi (amalda: bekor qilish).
+
+        Ilgari bu endpoint sotuvchiga ISTALGAN holatni yozishga ruxsat
+        berardi — jonli auksionni `ended` qilib order/g'olib oqimini
+        chetlab o'tish, yoki bidli auksionni `cancelled` qilib bidlarni
+        kuydirish mumkin edi. Endi:
+          - faqat SELLER_ALLOWED_TARGETS (bekor qilish) ruxsat etiladi
+          - o'tish state machine bilan tekshiriladi
+          - bidli auksionni bekor qilib bo'lmaydi
+        Auksion qatori FOR UPDATE bilan qulflanadi — bekor qilish va
+        parallel bid o'zaro poyga qilmaydi.
+        """
+        try:
+            auction = self.auctions.get_for_update(auction_id)
+            if auction is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+                )
+            if auction.seller_id != seller.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Not your auction"
+                )
+            if target not in SELLER_ALLOWED_TARGETS:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Seller can only cancel an auction",
+                )
+
+            try:
+                assert_transition(auction.status, target)
+            except InvalidAuctionTransition as exc:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+            has_bids = BidRepository(self.db).get_highest_valid_bid(auction.id) is not None
+            if has_bids:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Cannot cancel an auction that already has bids",
+                )
+
+            auction.status = target
+            auction.item.status = ItemStatus.CANCELLED
+            self.db.add(auction)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+        self.db.refresh(auction)
         return auction
 
-    def close_auction(self, auction: Auction) -> Auction:
-        # TODO: Move this workflow to a background job triggered by auction end_time.
-        winning_bid = BidRepository(self.db).get_highest_valid_bid(auction.id)
-        if winning_bid is None:
+    def close_auction(self, auction_id: int) -> Auction:
+        """Auksionni yopadi: g'olibni aniqlab, order yaratadi.
+
+        # TODO: fon vazifasiga ko'chirilsin (end_time bo'yicha avtomatik).
+
+        Auksion qatori FOR UPDATE bilan qulflanadi — yopish paytida
+        parallel bid kelib g'olibni o'zgartira olmaydi. Faqat ACTIVE
+        auksion yopiladi (idempotent: qayta yopish yoki boshlanmaganini
+        yopish 409 beradi). Holat o'zgarishlari state machine orqali.
+        """
+        try:
+            auction = self.auctions.get_for_update(auction_id)
+            if auction is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+                )
+            if auction.status != AuctionStatus.ACTIVE:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Only an active auction can be closed",
+                )
+
+            winning_bid = BidRepository(self.db).get_highest_valid_bid(auction.id)
+
+            if winning_bid is None:
+                assert_transition(auction.status, AuctionStatus.ENDED)
+                auction.status = AuctionStatus.ENDED
+                auction.winner_id = None
+                auction.highest_bidder_id = None
+                auction.item.status = ItemStatus.CANCELLED
+                self.db.add(auction)
+                self.db.commit()
+                self.db.refresh(auction)
+                return auction
+
+            auction.winning_bid = winning_bid
+            auction.highest_bidder_id = winning_bid.bidder_id
+            auction.winner_id = winning_bid.bidder_id
+
+            if auction.reserve_price is not None and winning_bid.amount < auction.reserve_price:
+                # TODO: reserve bajarilmaganda sotuvchi va bidderlarni xabardor qil.
+                assert_transition(auction.status, AuctionStatus.RESERVE_NOT_MET)
+                auction.status = AuctionStatus.RESERVE_NOT_MET
+                auction.item.status = ItemStatus.CANCELLED
+                self.db.add(auction)
+                self.db.commit()
+                self.db.refresh(auction)
+                return auction
+
+            assert_transition(auction.status, AuctionStatus.ENDED)
             auction.status = AuctionStatus.ENDED
-            auction.winner_id = None
-            auction.highest_bidder_id = None
-            auction.item.status = ItemStatus.CANCELLED
+            auction.item.status = ItemStatus.SOLD
+            # TODO: g'olib aniqlangach xabar + to'lov avtorizatsiyasi.
             self.db.add(auction)
+            self.db.flush()
+            OrderService(self.db).create_order_for_winning_auction(auction)
             self.db.commit()
-            self.db.refresh(auction)
-            return auction
+        except Exception:
+            self.db.rollback()
+            raise
 
-        auction.winning_bid = winning_bid
-        auction.highest_bidder_id = winning_bid.bidder_id
-        auction.winner_id = winning_bid.bidder_id
-
-        if auction.reserve_price is not None and winning_bid.amount < auction.reserve_price:
-            # TODO: Notify the seller and bidders when reserve is not met.
-            auction.status = AuctionStatus.RESERVE_NOT_MET
-            auction.item.status = ItemStatus.CANCELLED
-            self.db.add(auction)
-            self.db.commit()
-            self.db.refresh(auction)
-            return auction
-
-        auction.status = AuctionStatus.ENDED
-        auction.item.status = ItemStatus.SOLD
-        # TODO: Trigger notifications and payment authorization after winner assignment.
-        self.db.add(auction)
-        self.db.flush()
-        OrderService(self.db).create_order_for_winning_auction(auction)
-        self.db.commit()
         self.db.refresh(auction)
         return auction
 

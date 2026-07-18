@@ -65,13 +65,7 @@ def set_auction_status(
     current_user: CurrentUser,
     db: DbSession,
 ) -> Auction:
-    repository = AuctionRepository(db)
-    auction = repository.get(auction_id)
-    if auction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found")
-    if auction.seller_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your auction")
-    return repository.update_status(auction, payload.status)
+    return AuctionService(db).set_status_by_seller(auction_id, current_user, payload.status)
 
 
 @router.post("/{auction_id}/close", response_model=AuctionRead)
@@ -85,7 +79,7 @@ def close_auction(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found")
     if auction.seller_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your auction")
-    return AuctionService(db).close_auction(auction)
+    return AuctionService(db).close_auction(auction_id)
 
 
 @router.post("/{auction_id}/bids", response_model=BidRead, status_code=status.HTTP_201_CREATED)

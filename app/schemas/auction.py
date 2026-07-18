@@ -43,6 +43,6 @@ class AuctionRead(BaseModel):
 
 
 class AuctionStatusUpdate(BaseModel):
-    status: AuctionStatus = Field(
-        description="Initial skeleton supports lifecycle transitions, not automatic settlement yet."
-    )
+    # Sotuvchi qo'lda faqat bekor qila oladi (cancelled). ENDED/RESERVE_NOT_MET
+    # faqat close oqimi orqali. Batafsil: app/services/auction_state.py
+    status: AuctionStatus = Field(description="Sotuvchi so'raydigan holat (amalda: cancelled)")
