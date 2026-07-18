@@ -1,6 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from app.core.dependencies import BearerToken, CurrentActiveUser, CurrentUser, DbSession, LoginForm
+from app.core.rate_limit import RateLimiter
 from app.models.user import User
 from app.schemas.auth import (
     AccessToken,
@@ -26,7 +27,11 @@ def register(payload: UserCreate, db: DbSession) -> User:
     return AuthService(db).register_user(payload)
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    dependencies=[Depends(RateLimiter("login", 60))],
+)
 def login(form_data: LoginForm, db: DbSession) -> Token:
     return AuthService(db).login_user(form_data.username, form_data.password)
 

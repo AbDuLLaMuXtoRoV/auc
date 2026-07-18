@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import CurrentUser, DbSession
+from app.core.rate_limit import RateLimiter
 from app.models.auction import Auction
 from app.models.bid import Bid
 from app.models.enums import AuctionStatus
@@ -82,7 +83,12 @@ def close_auction(
     return AuctionService(db).close_auction(auction_id)
 
 
-@router.post("/{auction_id}/bids", response_model=BidRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{auction_id}/bids",
+    response_model=BidRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RateLimiter("bid", 60))],
+)
 def create_bid(
     auction_id: int,
     payload: BidCreate,
