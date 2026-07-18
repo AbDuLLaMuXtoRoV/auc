@@ -33,6 +33,17 @@ class Settings(BaseSettings):
     public_upload_url_prefix: str = "/uploads"
     algorithm: str = "HS256"
 
+    # Auksionni avtomatik yopuvchi fon vazifasi.
+    # Default False: testlarda fon vazifasi ishga tushib test bazasini
+    # o'zgartirmasligi kerak. Local/prod'da .env orqali yoqiladi.
+    auction_closer_enabled: bool = False
+    auction_closer_interval_seconds: int = 5
+
+    # Rate limiting (bid/login brute-force himoyasi).
+    rate_limit_enabled: bool = True
+    rate_limit_login_per_minute: int = 5
+    rate_limit_bid_per_minute: int = 10
+
     @property
     def is_production(self) -> bool:
         """Prod yoki staging — ya'ni real pul va real foydalanuvchilar muhiti."""
