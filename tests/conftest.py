@@ -9,12 +9,19 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.config import settings
 from app.db import base  # noqa: F401
 from app.db.session import get_db
 from app.main import app
 from app.models.base import Base
 from app.models.enums import UserRole
 from app.repositories.user_repository import UserRepository
+
+# Test to'plami "test" muhitida ishlaydi: mock to'lov ruxsat etiladi, rate
+# limiting o'chiq (aks holda ko'p marta login/bid qiluvchi testlar 429 olardi).
+# Muhit-bog'liq xatti-harakatni sinovchi testlar (masalan prod bloklari)
+# o'z Settings nusxasini yoki monkeypatch ishlatadi.
+settings.environment = "test"
 
 # REAL Postgres — SQLite EMAS.
 #

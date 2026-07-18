@@ -41,8 +41,11 @@ def test_mock_provider_is_forbidden_in_production(monkeypatch: pytest.MonkeyPatc
         get_payment_provider(MockPaymentProvider.provider_name)
 
 
-def test_mock_provider_is_allowed_in_local() -> None:
-    assert settings.environment == "local"
+def test_mock_provider_is_allowed_in_non_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Mock local/test'da ruxsat etiladi.
+    monkeypatch.setattr(settings, "environment", "local")
+    assert isinstance(get_payment_provider("mock"), MockPaymentProvider)
+    monkeypatch.setattr(settings, "environment", "test")
     assert isinstance(get_payment_provider("mock"), MockPaymentProvider)
 
 
