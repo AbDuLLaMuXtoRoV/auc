@@ -203,10 +203,20 @@ class BidService:
         valid bid kelsa, `end_time` `soft_close_extension_seconds` (120s)
         ga suriladi. Maqsad: oxirgi soniyada urib olishning (sniping)
         oldini olish — har kim javob berishga ulguradi.
+
+        CHEKLOV: uzaytirish cheksiz emas. Auksion ko'pi bilan
+        `max_soft_close_extensions` marta uzaytiriladi (har uzaytirishda
+        `extension_count += 1`). Limitga yetganda oxirgi soniyadagi bid
+        muddatni SURMAYDI — auksion o'z vaqtida yopiladi. Aks holda ikki
+        raqib navbatma-navbat bid qo'yib auksionni cheksiz cho'zishi mumkin edi.
         """
         now = datetime.now(UTC)
         end_time = _as_utc(auction.end_time)
         seconds_until_close = (end_time - now).total_seconds()
 
-        if 0 < seconds_until_close <= settings.soft_close_window_seconds:
+        within_window = 0 < seconds_until_close <= settings.soft_close_window_seconds
+        under_limit = auction.extension_count < settings.max_soft_close_extensions
+
+        if within_window and under_limit:
             auction.end_time = end_time + timedelta(seconds=settings.soft_close_extension_seconds)
+            auction.extension_count += 1
