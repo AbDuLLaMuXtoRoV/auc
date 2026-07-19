@@ -7,13 +7,12 @@ import jwt
 from jwt import PyJWTError
 
 from app.core.config import settings
+from app.core.token_store import get_token_store
 
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
 PASSWORD_RESET_TOKEN_TYPE = "password_reset"
 EMAIL_VERIFICATION_TOKEN_TYPE = "email_verification"
-
-_REVOKED_TOKEN_IDS: set[str] = set()
 
 
 def hash_password(password: str) -> str:
@@ -76,7 +75,7 @@ def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any]
         return None
 
     token_id = payload.get("jti")
-    if token_id in _REVOKED_TOKEN_IDS:
+    if token_id is not None and get_token_store().is_revoked(token_id):
         return None
     if expected_type is not None and payload.get("type") != expected_type:
         return None
@@ -94,5 +93,5 @@ def revoke_token(token: str) -> bool:
     token_id = payload.get("jti")
     if token_id is None:
         return False
-    _REVOKED_TOKEN_IDS.add(token_id)
+    get_token_store().revoke(token_id)
     return True
