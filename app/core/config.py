@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     rate_limit_login_per_minute: int = 5
     rate_limit_bid_per_minute: int = 10
 
+    # Escrow / to'lov (Faza D).
+    buyer_premium_bps: int = 800  # 8% (basis points)
+    auto_complete_hours: int = 72  # xaridor sukut saqlasa order shu vaqtda yakunlanadi
+    # PSP webhook imzo maxfiy kaliti. Prod'da .env orqali beriladi.
+    psp_webhook_secret: str = "change-me-webhook-secret"
+
     @property
     def is_production(self) -> bool:
         """Prod yoki staging — ya'ni real pul va real foydalanuvchilar muhiti."""

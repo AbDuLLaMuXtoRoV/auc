@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, ForeignKey
+from sqlalchemy import BigInteger, DateTime, ForeignKey
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -24,6 +24,11 @@ class Order(Base):
         default=OrderStatus.PENDING_PAYMENT,
         index=True,
         nullable=False,
+    )
+    # Auto-complete: hold qilingandan keyin xaridor sukut saqlasa, shu vaqtdan
+    # keyin (72 soat) order avtomatik yakunlanadi va capture bo'ladi.
+    auto_complete_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

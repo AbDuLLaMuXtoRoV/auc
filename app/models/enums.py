@@ -42,6 +42,10 @@ class PaymentStatus(StrEnum):
     PAID = "paid"
     FAILED = "failed"
     REFUNDED = "refunded"
+    # Escrow holatlari (Faza D):
+    HELD = "held"  # PSP kartada bloklagan — pul hali ko'chmagan
+    RELEASED = "released"  # capture qilindi — sotuvchiga o'tdi
+    CANCELLED_HOLD = "cancelled_hold"  # blok bekor qilindi — pul xaridorda qoldi
 
 
 class OrderStatus(StrEnum):
