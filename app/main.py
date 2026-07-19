@@ -7,6 +7,8 @@ from starlette.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.logging_config import configure_logging
+from app.core.request_context import RequestIdMiddleware
 from app.services.auction_closer import start_auction_closer, stop_auction_closer
 from app.services.auto_complete import start_auto_complete, stop_auto_complete
 
@@ -28,7 +30,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
+    configure_logging()
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
+    app.add_middleware(RequestIdMiddleware)
     app.include_router(api_router, prefix="/api/v1")
     Path(settings.local_upload_dir).mkdir(parents=True, exist_ok=True)
     app.mount(
