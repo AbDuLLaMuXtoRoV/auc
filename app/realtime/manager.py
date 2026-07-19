@@ -12,7 +12,12 @@ qolganlari sub qilib o'z room'lariga uzatadi).
 TODO(realtime): Redis pub/sub fan-out qatlamini ulash.
 """
 
+import asyncio
+import logging
+
 from fastapi import WebSocket
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -26,6 +31,28 @@ class ConnectionManager:
     def __init__(self) -> None:
         # auction_id -> shu auksionni kuzatayotgan ochiq WebSocketlar to'plami.
         self._rooms: dict[int, set[WebSocket]] = {}
+        # Ilova event loop'i — sync kod (bid threadpool'i) broadcast'ni shu
+        # loop'ga rejalashtirishi uchun. Startup'da set_loop bilan o'rnatiladi.
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        """Ilova event loop'ini saqlaydi (lifespan startup'da chaqiriladi)."""
+        self._loop = loop
+
+    def broadcast_threadsafe(self, auction_id: int, message: dict) -> None:
+        """SYNC koddan xavfsiz broadcast — bid threadpool'idan chaqiriladi.
+
+        Broadcast BEST-EFFORT: loop yo'q, yopilgan yoki xato bo'lsa jimgina
+        o'tkazib yuboriladi. Real-time yangilanish yetkazilmasligi BID
+        oqimini HECH QACHON buzmasligi kerak (pul yo'li birinchi).
+        """
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(self.broadcast(auction_id, message), loop)
+        except Exception:  # noqa: BLE001 — broadcast best-effort, bid'ni buzmaydi
+            logger.debug("broadcast_threadsafe o'tkazib yuborildi", exc_info=True)
 
     async def connect(self, ws: WebSocket, auction_id: int) -> None:
         """WebSocket handshake'ni qabul qiladi va uni auksion room'iga qo'shadi."""

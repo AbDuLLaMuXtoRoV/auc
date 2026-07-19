@@ -8,6 +8,7 @@ from app.models.auction import Auction
 from app.models.bid import Bid
 from app.models.enums import AuctionStatus, BidStatus, ItemStatus, NotificationType
 from app.models.user import User
+from app.realtime import manager
 from app.repositories.auction_repository import AuctionRepository
 from app.schemas.bid import BidCreate
 from app.services.auction_state import assert_transition
@@ -83,6 +84,20 @@ class BidService:
             raise
 
         self.db.refresh(returned_bid)
+
+        # Real-time: kuzatuvchilarga narx yangilanishini yuboramiz. BEST-EFFORT —
+        # tranzaksiyadan KEYIN, xatosi bid'ni buzmaydi (broadcast_threadsafe
+        # ichida yutiladi). high_bidder_max / max_amount HECH QACHON yuborilmaydi.
+        manager.broadcast_threadsafe(
+            auction_id,
+            {
+                "type": "BID_PLACED",
+                "auction_id": auction_id,
+                "current_price": str(auction.current_price),
+                "highest_bidder_id": auction.highest_bidder_id,
+                "end_time": _as_utc(auction.end_time).isoformat(),
+            },
+        )
         return returned_bid
 
     def _resolve_bid(self, auction: Auction, bidder: User, payload: BidCreate) -> Bid:
