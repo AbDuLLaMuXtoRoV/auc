@@ -27,6 +27,48 @@ class BasePaymentProvider(ABC):
     def confirm_payment(self, *, provider_payment_id: str) -> PaymentProviderResult:
         raise NotImplementedError
 
+    @abstractmethod
+    def create_hold(
+        self,
+        *,
+        amount_tiyin: Tiyin,
+        currency: str,
+        token_reference: str | None,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        """Escrow: xaridor kartasida mablag'ni bloklaydi (hold), pul hali ko'chmaydi.
+
+        Natija status=HELD. Bu bosqichda pul PSP tomonida "muzlatilgan" —
+        na sotuvchida, na bizda. Keyin capture yoki release chaqiriladi.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def capture(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        """Escrow: bloklangan mablag'ni yechib, sotuvchiga o'tkazadi.
+
+        Natija status=RELEASED. Faqat oldindan HELD bo'lgan hold ustida ishlaydi.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def release(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        """Escrow: blokni bekor qiladi — pul xaridorda qoladi.
+
+        Natija status=CANCELLED_HOLD. Bitim bekor bo'lganda ishlatiladi.
+        """
+        raise NotImplementedError
+
 
 class MockPaymentProvider(BasePaymentProvider):
     """Faqat local/test uchun. Doim muvaffaqiyat qaytaradi — prod'da ISHLATILMAYDI.
@@ -48,6 +90,84 @@ class MockPaymentProvider(BasePaymentProvider):
             provider_payment_id=provider_payment_id,
             status=PaymentStatus.PAID,
         )
+
+    def create_hold(
+        self,
+        *,
+        amount_tiyin: Tiyin,
+        currency: str,
+        token_reference: str | None,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        return PaymentProviderResult(
+            provider_payment_id=f"hold_{uuid4().hex}",
+            status=PaymentStatus.HELD,
+        )
+
+    def capture(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        return PaymentProviderResult(
+            provider_payment_id=provider_payment_id,
+            status=PaymentStatus.RELEASED,
+        )
+
+    def release(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        return PaymentProviderResult(
+            provider_payment_id=provider_payment_id,
+            status=PaymentStatus.CANCELLED_HOLD,
+        )
+
+
+class FakeFailingProvider(BasePaymentProvider):
+    """Faqat test uchun: escrow xatolarini simulyatsiya qiladi.
+
+    Registrga QO'SHILMAYDI — get_payment_provider orqali olinmaydi.
+    create_hold har doim PaymentProviderError ko'taradi, shunda escrow
+    xato yo'lini (hold ololmaslik) test qilish mumkin.
+    """
+
+    provider_name = "fake_failing"
+
+    def create_payment(self, *, amount: Tiyin, currency: str) -> PaymentProviderResult:
+        raise PaymentProviderError("FakeFailingProvider: create_payment ataylab muvaffaqiyatsiz.")
+
+    def confirm_payment(self, *, provider_payment_id: str) -> PaymentProviderResult:
+        raise PaymentProviderError("FakeFailingProvider: confirm_payment ataylab muvaffaqiyatsiz.")
+
+    def create_hold(
+        self,
+        *,
+        amount_tiyin: Tiyin,
+        currency: str,
+        token_reference: str | None,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        raise PaymentProviderError("FakeFailingProvider: hold yaratib bo'lmadi (simulyatsiya).")
+
+    def capture(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        raise PaymentProviderError("FakeFailingProvider: capture muvaffaqiyatsiz (simulyatsiya).")
+
+    def release(
+        self,
+        *,
+        provider_payment_id: str,
+        idempotency_key: str,
+    ) -> PaymentProviderResult:
+        raise PaymentProviderError("FakeFailingProvider: release muvaffaqiyatsiz (simulyatsiya).")
 
 
 # Real provayderlar (Payme/Click/Uzum) shu registrga qo'shiladi.
