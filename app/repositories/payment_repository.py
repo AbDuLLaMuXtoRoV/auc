@@ -36,6 +36,10 @@ class PaymentRepository:
     def get(self, payment_id: int) -> Payment | None:
         return self.db.get(Payment, payment_id)
 
+    def get_by_idempotency_key(self, idempotency_key: str) -> Payment | None:
+        statement = select(Payment).where(Payment.idempotency_key == idempotency_key)
+        return self.db.scalar(statement)
+
     def get_latest_by_order(self, order_id: int) -> Payment | None:
         statement = (
             select(Payment)

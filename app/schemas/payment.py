@@ -32,6 +32,23 @@ class PaymentIntentCreate(BaseModel):
     provider: str = Field(default="mock", min_length=2, max_length=80)
 
 
+class HoldCreate(BaseModel):
+    """Escrow hold so'rovi. Summa serverdan (order.final_price) olinadi —
+    klientdan EMAS. idempotency_key klientdan (UUID) keladi."""
+
+    order_id: int
+    idempotency_key: str = Field(min_length=8, max_length=128)
+    provider: str = Field(default="mock", min_length=2, max_length=80)
+    token_reference: str | None = Field(default=None, max_length=255)
+    currency: str = Field(default="UZS", min_length=3, max_length=3)
+
+
+class EscrowAction(BaseModel):
+    """Capture / release so'rovi — idempotency_key bilan."""
+
+    idempotency_key: str = Field(min_length=8, max_length=128)
+
+
 class PaymentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,6 +56,8 @@ class PaymentRead(BaseModel):
     order_id: int
     buyer_id: int
     amount: TiyinAmount
+    premium: TiyinAmount
+    total: TiyinAmount
     currency: str
     status: PaymentStatus
     provider: str

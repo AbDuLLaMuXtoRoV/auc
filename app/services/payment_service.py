@@ -1,14 +1,20 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.enums import OrderStatus, PaymentStatus, UserRole
 from app.models.payment import Payment
 from app.models.user import User
+from app.money import calc_buyer_premium
 from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
-from app.schemas.payment import PaymentIntentCreate
+from app.schemas.payment import HoldCreate, PaymentIntentCreate
+from app.services.audit_service import AuditService
 from app.services.payment_providers import PaymentProviderError, get_payment_provider
+from app.services.payment_state import assert_payment_transition
 
 
 class PaymentService:
@@ -87,6 +93,197 @@ class PaymentService:
             order = self.orders.get(payment.order_id)
             if order is not None:
                 self.orders.update_status(order, OrderStatus.PAID)
+        return payment
+
+    # --- Escrow oqimi (Faza D) --------------------------------------------
+
+    def create_hold(self, payload: HoldCreate, buyer: User, ip: str | None = None) -> Payment:
+        """Escrow hold yaratadi: PSP kartada mablag'ni bloklaydi.
+
+        Idempotent: bir xil idempotency_key bilan takroriy so'rov yangi hold
+        yaratmaydi — mavjudini qaytaradi (ikki marta bloklanish TAQIQ).
+        Summa serverdan (order.final_price + buyer premium) hisoblanadi,
+        klientdan olinmaydi.
+        """
+        existing = self.payments.get_by_idempotency_key(payload.idempotency_key)
+        if existing is not None:
+            return existing  # tekshirmasdan qayta yaratish TAQIQ
+
+        order = self.orders.get(payload.order_id)
+        if order is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        if order.buyer_id != buyer.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your order")
+        if order.status != OrderStatus.PENDING_PAYMENT:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Order is not pending payment"
+            )
+
+        try:
+            provider = get_payment_provider(payload.provider)
+        except PaymentProviderError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+        amount = order.final_price
+        premium = calc_buyer_premium(amount, settings.buyer_premium_bps)
+        total = amount + premium
+
+        payment = Payment(
+            order_id=order.id,
+            buyer_id=buyer.id,
+            amount=amount,
+            premium=premium,
+            total=total,
+            currency=payload.currency,
+            provider=provider.provider_name,
+            status=PaymentStatus.PENDING,
+            idempotency_key=payload.idempotency_key,
+        )
+        self.db.add(payment)
+        try:
+            # Unique cheklovni HOZIR ishga tushiramiz: parallel bir xil kalitli
+            # so'rov IntegrityError oladi va mavjud natijaga qaytadi.
+            self.db.flush()
+        except IntegrityError:
+            self.db.rollback()
+            return self.payments.get_by_idempotency_key(payload.idempotency_key)
+
+        try:
+            result = provider.create_hold(
+                amount_tiyin=total,
+                currency=payload.currency,
+                token_reference=payload.token_reference,
+                idempotency_key=payload.idempotency_key,
+            )
+        except PaymentProviderError as exc:
+            # Hold amalga oshmadi — FAILED yozib qo'yamiz (dalil qoladi).
+            payment.status = PaymentStatus.FAILED
+            payment.failed_reason = str(exc)[:255]
+            AuditService(self.db).record(
+                action="PAYMENT_FAILED",
+                entity_type="payment",
+                entity_id=payment.id,
+                actor_id=buyer.id,
+                new_value={"status": PaymentStatus.FAILED.value, "reason": str(exc)[:255]},
+                idempotency_key=payload.idempotency_key,
+                ip=ip,
+            )
+            self.db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY, detail="Payment hold failed"
+            ) from exc
+
+        assert_payment_transition(payment.status, result.status)  # PENDING -> HELD
+        payment.status = result.status
+        payment.provider_payment_id = result.provider_payment_id
+        payment.held_at = datetime.now(UTC)
+
+        order.status = OrderStatus.PICKUP_PENDING
+        order.auto_complete_at = datetime.now(UTC) + timedelta(hours=settings.auto_complete_hours)
+
+        AuditService(self.db).record(
+            action="PAYMENT_HELD",
+            entity_type="payment",
+            entity_id=payment.id,
+            actor_id=buyer.id,
+            new_value={"status": result.status.value, "total": total},
+            idempotency_key=payload.idempotency_key,
+            ip=ip,
+        )
+        self.db.commit()
+        self.db.refresh(payment)
+        return payment
+
+    def capture_payment(
+        self, payment_id: int, idempotency_key: str, actor: User | None, ip: str | None = None
+    ) -> Payment:
+        """Hold'ni capture qiladi: pul sotuvchiga o'tadi, order yakunlanadi.
+
+        Xaridor tovarni tasdiqlaganda yoki auto-complete worker tomonidan
+        (actor=None) chaqiriladi. Idempotent: allaqachon RELEASED bo'lsa
+        qayta capture qilmaydi.
+        """
+        payment = self.payments.get(payment_id)
+        if payment is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+        if actor is not None and actor.role != UserRole.ADMIN and actor.id != payment.buyer_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
+        if payment.status == PaymentStatus.RELEASED:
+            return payment  # idempotent — ikki marta capture qilinmaydi
+        if payment.status != PaymentStatus.HELD:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Payment is not in HELD state"
+            )
+
+        provider = get_payment_provider(payment.provider)
+        result = provider.capture(
+            provider_payment_id=payment.provider_payment_id or "",
+            idempotency_key=idempotency_key,
+        )
+        assert_payment_transition(payment.status, result.status)  # HELD -> RELEASED
+        payment.status = result.status
+        payment.released_at = datetime.now(UTC)
+
+        order = self.orders.get(payment.order_id)
+        if order is not None:
+            order.status = OrderStatus.COMPLETED
+
+        AuditService(self.db).record(
+            action="PAYMENT_RELEASED",
+            entity_type="payment",
+            entity_id=payment.id,
+            actor_id=actor.id if actor is not None else None,
+            new_value={"status": result.status.value},
+            idempotency_key=idempotency_key,
+            ip=ip,
+        )
+        self.db.commit()
+        self.db.refresh(payment)
+        return payment
+
+    def release_hold(
+        self, payment_id: int, idempotency_key: str, actor: User | None, ip: str | None = None
+    ) -> Payment:
+        """Hold'ni bekor qiladi: blok ochiladi, pul xaridorda qoladi.
+
+        Nizo yoki topshirilmaganda. Idempotent: allaqachon bekor bo'lsa
+        qayta chaqirilishi zararsiz.
+        """
+        payment = self.payments.get(payment_id)
+        if payment is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+        if actor is not None and actor.role != UserRole.ADMIN and actor.id != payment.buyer_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
+        if payment.status == PaymentStatus.CANCELLED_HOLD:
+            return payment  # idempotent
+        if payment.status != PaymentStatus.HELD:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Payment is not in HELD state"
+            )
+
+        provider = get_payment_provider(payment.provider)
+        result = provider.release(
+            provider_payment_id=payment.provider_payment_id or "",
+            idempotency_key=idempotency_key,
+        )
+        assert_payment_transition(payment.status, result.status)  # HELD -> CANCELLED_HOLD
+        payment.status = result.status
+
+        order = self.orders.get(payment.order_id)
+        if order is not None:
+            order.status = OrderStatus.CANCELLED
+
+        AuditService(self.db).record(
+            action="PAYMENT_CANCELLED_HOLD",
+            entity_type="payment",
+            entity_id=payment.id,
+            actor_id=actor.id if actor is not None else None,
+            new_value={"status": result.status.value},
+            idempotency_key=idempotency_key,
+            ip=ip,
+        )
+        self.db.commit()
+        self.db.refresh(payment)
         return payment
 
     def get_payment_by_order(self, order_id: int, actor: User) -> Payment:
