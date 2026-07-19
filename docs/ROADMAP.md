@@ -106,9 +106,27 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 | Mobil | Mobil klient (API allaqachon shunga mo'ljallangan) |
 | Beta | Cheklangan kategoriya + Toshkent, real pul, kichik hajm |
 
-**Real-time / Handover / Notifications / Anti-fraud / Nizolar / Logging ✅ MVP darajasida.**
-Qolgan ulanishlar: WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push,
-Redis fan-out, sotuvchi reytingi, real PSP adapteri, yurist xulosasi.
+**Real-time / Handover / Notifications / Anti-fraud / Nizolar / Logging / Sotuvchi reytingi
+/ WS auth / Push abstraksiyasi ✅ MVP darajasida.**
+
+## Xavfsizlik backlog (code+security review'dan, hali ochiq)
+
+Katta review'da topilib **tuzatilgan**: forgot-password token leak, capture/release
+FOR UPDATE, xaridor self-release, hold idempotency IDOR, dispute decision+lock,
+webhook secret prod guard, order state machine, proxy tie-break, WS auth.
+
+**Hali ochiq (keyingi qattiqlashtirish):**
+- [ ] Token bekor qilish in-memory (`_REVOKED_TOKEN_IDS`) — restart/multi-worker'da
+      yo'qoladi. Redis blacklist kerak.
+- [ ] Fayl yuklash: MIME/kengaytma oq ro'yxati + hajm limiti (SVG/HTML stored XSS xatari).
+- [ ] Rate limit: register/reset-password'ga ham (hozir login/bid/forgot-password).
+      Reverse proxy ortida `X-Forwarded-For` parse qilish.
+- [ ] `close_auction` end_time tekshiruvi — sotuvchi manual close'da muddatdan oldin
+      yopa oladi (auto-closer to'g'ri; manual yo'l qattiqlashtirilsin).
+- [ ] Webhook event -> payment holati ulash (`provider_event_id` dedup + `is_fresh`).
+- [ ] `Payment.held_at/released_at` timezone-aware ustunga o'tkazish.
+- [ ] WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push real adapteri,
+      Redis fan-out, real PSP adapteri, yurist xulosasi.
 
 ## Qat'iy tartib qoidasi
 
