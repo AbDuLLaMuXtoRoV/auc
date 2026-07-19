@@ -37,6 +37,11 @@ class DisputeRepository:
     def get(self, dispute_id: int) -> Dispute | None:
         return self.db.get(Dispute, dispute_id)
 
+    def get_for_update(self, dispute_id: int) -> Dispute | None:
+        """Nizo qatorini qulflab o'qiydi — parallel resolve poygasining oldi."""
+        statement = select(Dispute).where(Dispute.id == dispute_id).with_for_update()
+        return self.db.scalars(statement).one_or_none()
+
     def get_open_by_order(self, order_id: int) -> Dispute | None:
         """Order uchun hali hal qilinmagan (OPEN/UNDER_REVIEW) nizo."""
         statement = select(Dispute).where(

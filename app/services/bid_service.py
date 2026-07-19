@@ -114,11 +114,15 @@ class BidService:
             status=BidStatus.VALID,
         )
 
+        # Leader himoyalanadi, agar uning maxi chaqiruvchining ko'ringan bidiga
+        # YETSA (teng bo'lsa ham) — teng max'da avval kelgan leader saqlanadi
+        # (eBay tie qoidasi). `>= amount + step` bo'lsa, teng max'da leader
+        # noto'g'ri yutqazardi (review topilmasi).
         leader_defends = (
             leader_id is not None
             and leader_id != bidder.id
             and leader_max is not None
-            and leader_max >= amount + step
+            and leader_max >= amount
         )
 
         if leader_defends:
@@ -126,7 +130,9 @@ class BidService:
             caller_bid.status = BidStatus.OUTBID
             self.db.add(caller_bid)
 
-            new_price = amount + step  # leader_max >= amount+step tekshirildi
+            # Narx: chaqiruvchidan bir qadam yuqori, lekin leader maxidan oshmaydi.
+            # Teng max'da new_price = amount (leader o'sha narxda ushlab qoladi).
+            new_price = min(leader_max, amount + step)
             proxy_bid = Bid(
                 auction_id=auction.id,
                 bidder_id=leader_id,

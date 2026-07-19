@@ -107,6 +107,17 @@ class PaymentService:
         """
         existing = self.payments.get_by_idempotency_key(payload.idempotency_key)
         if existing is not None:
+            # Egalik tekshiruvi: begona kalitli payment oshkor bo'lmasin (IDOR).
+            if existing.buyer_id != buyer.id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Idempotency key already used"
+                )
+            # Xato bilan tugagan hold uchun retry: yangi kalit talab qilinadi.
+            if existing.status == PaymentStatus.FAILED:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Previous attempt failed; use a new idempotency key",
+                )
             return existing  # tekshirmasdan qayta yaratish TAQIQ
 
         order = self.orders.get(payload.order_id)
@@ -145,8 +156,16 @@ class PaymentService:
             # so'rov IntegrityError oladi va mavjud natijaga qaytadi.
             self.db.flush()
         except IntegrityError:
+            # Parallel bir xil kalit: birinchi tranzaksiya hali commit qilmagan
+            # bo'lsa mavjud None bo'lishi mumkin — 409 beramiz (None qaytarmaymiz).
             self.db.rollback()
-            return self.payments.get_by_idempotency_key(payload.idempotency_key)
+            other = self.payments.get_by_idempotency_key(payload.idempotency_key)
+            if other is None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Concurrent request in progress; retry",
+                ) from None
+            return other
 
         try:
             result = provider.create_hold(
@@ -201,9 +220,10 @@ class PaymentService:
 
         Xaridor tovarni tasdiqlaganda yoki auto-complete worker tomonidan
         (actor=None) chaqiriladi. Idempotent: allaqachon RELEASED bo'lsa
-        qayta capture qilmaydi.
+        qayta capture qilmaydi. Qatorni FOR UPDATE bilan qulflaydi —
+        parallel capture/release poygasi PSP'da ikki settlement bermaydi.
         """
-        payment = self.payments.get(payment_id)
+        payment = self.payments.get_for_update(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
         if actor is not None and actor.role != UserRole.ADMIN and actor.id != payment.buyer_id:
@@ -246,14 +266,19 @@ class PaymentService:
     ) -> Payment:
         """Hold'ni bekor qiladi: blok ochiladi, pul xaridorda qoladi.
 
-        Nizo yoki topshirilmaganda. Idempotent: allaqachon bekor bo'lsa
-        qayta chaqirilishi zararsiz.
+        FAQAT admin (nizo qarori) yoki tizim (actor=None) chaqira oladi.
+        Xaridor O'ZI release qila OLMAYDI — aks holda tovarni olgach hold'ni
+        bekor qilib pulni qaytarib olardi (escrow himoyasi teshigi, review
+        KRITIK topilmasi). Qatorni FOR UPDATE bilan qulflaydi.
         """
-        payment = self.payments.get(payment_id)
+        payment = self.payments.get_for_update(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
-        if actor is not None and actor.role != UserRole.ADMIN and actor.id != payment.buyer_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
+        if actor is not None and actor.role != UserRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only an admin can release a hold (open a dispute instead)",
+            )
         if payment.status == PaymentStatus.CANCELLED_HOLD:
             return payment  # idempotent
         if payment.status != PaymentStatus.HELD:

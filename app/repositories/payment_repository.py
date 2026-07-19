@@ -36,6 +36,17 @@ class PaymentRepository:
     def get(self, payment_id: int) -> Payment | None:
         return self.db.get(Payment, payment_id)
 
+    def get_for_update(self, payment_id: int) -> Payment | None:
+        """To'lov qatorini QULFLAB o'qiydi (SELECT ... FOR UPDATE).
+
+        capture/release uchun: parallel ikki oqim (handover capture +
+        auto-complete, yoki capture vs release) bir vaqtda HELD ni o'qib
+        ikki marta settlement yubormasligi uchun. Qulf tranzaksiya
+        tugaguncha ushlanadi — chaqiruvchi commit qilmasligi kerak.
+        """
+        statement = select(Payment).where(Payment.id == payment_id).with_for_update()
+        return self.db.scalars(statement).one_or_none()
+
     def get_by_idempotency_key(self, idempotency_key: str) -> Payment | None:
         statement = select(Payment).where(Payment.idempotency_key == idempotency_key)
         return self.db.scalar(statement)

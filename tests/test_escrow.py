@@ -151,9 +151,14 @@ def test_double_capture_is_idempotent(client: TestClient) -> None:
     assert c2.json()["status"] == "released"  # o'zgarmadi
 
 
-def test_release_hold_cancels_order(client: TestClient) -> None:
+def test_release_is_admin_only_and_cancels_order(client: TestClient, db_session: Session) -> None:
+    """Xaridor O'ZI release qila OLMAYDI (escrow himoyasi); faqat admin."""
+    from app.models.enums import UserRole
+    from tests.conftest import create_user
+
     seller = _register_and_login(client, "seller@example.com")
     buyer = _register_and_login(client, "buyer@example.com")
+    admin = create_user(client, db_session, email="admin@example.com", role=UserRole.ADMIN)
     order = _create_order(client, seller, buyer)
 
     hold = client.post(
@@ -162,10 +167,20 @@ def test_release_hold_cancels_order(client: TestClient) -> None:
         json={"order_id": order["id"], "idempotency_key": "hold-key-3", "provider": "mock"},
     )
     pid = hold.json()["id"]
-    rel = client.post(
+
+    # Xaridor release urinishi -> 403 (tovarni olib pulni qaytarib olish teshigi yopiq).
+    buyer_try = client.post(
         f"/api/v1/payments/{pid}/release",
         headers={"Authorization": f"Bearer {buyer}"},
         json={"idempotency_key": "rel-key-30"},
+    )
+    assert buyer_try.status_code == 403
+
+    # Admin release -> muvaffaqiyatli.
+    rel = client.post(
+        f"/api/v1/payments/{pid}/release",
+        headers=admin.headers,
+        json={"idempotency_key": "rel-key-31"},
     )
     assert rel.status_code == 200
     assert rel.json()["status"] == "cancelled_hold"

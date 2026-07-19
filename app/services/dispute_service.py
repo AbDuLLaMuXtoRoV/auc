@@ -87,8 +87,17 @@ class DisputeService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
             )
+        # decision qat'iy {"buyer","seller"} — aks holda jimgina capture bo'lib
+        # pul noto'g'ri tomonga ketardi (review topilmasi).
+        if decision not in {"buyer", "seller"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="decision 'buyer' yoki 'seller' bo'lishi kerak",
+            )
 
-        dispute = self.disputes.get(dispute_id)
+        # Qulflab o'qiymiz — ikki parallel resolve biri capture biri release
+        # qilib qo'ymasin (TOCTOU).
+        dispute = self.disputes.get_for_update(dispute_id)
         if dispute is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispute not found")
         if dispute.status not in OPEN_STATUSES:

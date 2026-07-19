@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
+from app.core.config import settings
 from app.core.dependencies import BearerToken, CurrentActiveUser, CurrentUser, DbSession, LoginForm
 from app.core.rate_limit import RateLimiter
 from app.models.user import User
@@ -52,15 +53,22 @@ def logout(payload: LogoutRequest, token: BearerToken, db: DbSession) -> Message
     return MessageResponse(message="Logged out")
 
 
-@router.post("/forgot-password", response_model=PasswordResetTokenResponse)
+@router.post(
+    "/forgot-password",
+    response_model=PasswordResetTokenResponse,
+    dependencies=[Depends(RateLimiter("login", 60))],
+)
 def forgot_password(
     payload: ForgotPasswordRequest,
     db: DbSession,
 ) -> PasswordResetTokenResponse:
+    # Token EMAIL orqali yuboriladi (TODO). Prod'da javobda QAYTARILMAYDI —
+    # aks holda hujumchi istalgan email uchun reset token olib, akkauntni
+    # egallaydi (security review KRITIK topilmasi). Local/test'da qaytariladi.
     reset_token = AuthService(db).create_password_reset_token_for_email(payload.email)
     return PasswordResetTokenResponse(
         message="If the email exists, password reset instructions have been generated",
-        reset_token=reset_token,
+        reset_token=None if settings.is_production else reset_token,
     )
 
 

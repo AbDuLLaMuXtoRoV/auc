@@ -6,6 +6,7 @@ from app.models.enums import OrderStatus, UserRole
 from app.models.order import Order
 from app.models.user import User
 from app.repositories.order_repository import OrderRepository
+from app.services.order_state import InvalidOrderTransition, assert_order_transition
 
 
 class OrderService:
@@ -56,4 +57,10 @@ class OrderService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only admin or seller can manage order status",
             )
+        # Qo'lda status yozish faqat ruxsat etilgan o'tishlar orqali (grifing/
+        # izchillik buzilishining oldi).
+        try:
+            assert_order_transition(order.status, new_status)
+        except InvalidOrderTransition as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
         return self.orders.update_status(order, new_status)

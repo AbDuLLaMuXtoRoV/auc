@@ -88,9 +88,25 @@ def test_production_rejects_default_secret_key() -> None:
 
 
 def test_production_accepts_strong_secret_key() -> None:
-    config = Settings(environment="production", secret_key=STRONG_SECRET, _env_file=None)
+    config = Settings(
+        environment="production",
+        secret_key=STRONG_SECRET,
+        psp_webhook_secret=STRONG_SECRET,
+        _env_file=None,
+    )
     assert config.is_production is True
     assert config.allow_mock_payments is False
+
+
+def test_production_rejects_default_webhook_secret() -> None:
+    """Default webhook secret bilan prod'da ishga tushish IMKONSIZ."""
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            environment="production",
+            secret_key=STRONG_SECRET,
+            _env_file=None,  # psp_webhook_secret defaultda qoladi
+        )
+    assert "WEBHOOK" in str(exc_info.value).upper()
 
 
 def test_local_allows_default_secret_key() -> None:

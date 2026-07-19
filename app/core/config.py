@@ -4,8 +4,10 @@ from typing import Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Kod ichida yozilgan zaif default. Prod/staging'da bu qiymat bilan ishga tushish TAQIQ.
+# Kod ichida yozilgan zaif defaultlar. Prod/staging'da bu qiymatlar bilan
+# ishga tushish TAQIQ (JWT qalbakilashtirish / soxta webhook imzo xatari).
 INSECURE_DEFAULT_SECRET_KEY = "change-me-in-production-secret-key"
+INSECURE_DEFAULT_WEBHOOK_SECRET = "change-me-webhook-secret"
 
 Environment = Literal["local", "test", "staging", "production"]
 
@@ -51,7 +53,7 @@ class Settings(BaseSettings):
     buyer_premium_bps: int = 800  # 8% (basis points)
     auto_complete_hours: int = 72  # xaridor sukut saqlasa order shu vaqtda yakunlanadi
     # PSP webhook imzo maxfiy kaliti. Prod'da .env orqali beriladi.
-    psp_webhook_secret: str = "change-me-webhook-secret"
+    psp_webhook_secret: str = INSECURE_DEFAULT_WEBHOOK_SECRET
     # Auto-complete fon vazifasi (auction_closer kabi, testda o'chiq).
     auto_complete_enabled: bool = False
     auto_complete_interval_seconds: int = 300
@@ -83,6 +85,11 @@ class Settings(BaseSettings):
                 f"SECRET_KEY '{self.environment}' muhitida default qiymatda qolgan. "
                 'Kuchli tasodifiy qiymat bering: python -c "import secrets; '
                 'print(secrets.token_urlsafe(48))"'
+            )
+        if self.is_production and self.psp_webhook_secret == INSECURE_DEFAULT_WEBHOOK_SECRET:
+            raise ValueError(
+                f"PSP_WEBHOOK_SECRET '{self.environment}' muhitida default qiymatda qolgan. "
+                "Soxta webhook imzosi bilan tovar bepul ketishi mumkin — kuchli kalit bering."
             )
         return self
 
