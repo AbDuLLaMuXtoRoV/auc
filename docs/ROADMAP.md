@@ -115,18 +115,23 @@ Katta review'da topilib **tuzatilgan**: forgot-password token leak, capture/rele
 FOR UPDATE, xaridor self-release, hold idempotency IDOR, dispute decision+lock,
 webhook secret prod guard, order state machine, proxy tie-break, WS auth.
 
-**Hali ochiq (keyingi qattiqlashtirish):**
-- [ ] Token bekor qilish in-memory (`_REVOKED_TOKEN_IDS`) — restart/multi-worker'da
-      yo'qoladi. Redis blacklist kerak.
-- [ ] Fayl yuklash: MIME/kengaytma oq ro'yxati + hajm limiti (SVG/HTML stored XSS xatari).
-- [ ] Rate limit: register/reset-password'ga ham (hozir login/bid/forgot-password).
-      Reverse proxy ortida `X-Forwarded-For` parse qilish.
-- [ ] `close_auction` end_time tekshiruvi — sotuvchi manual close'da muddatdan oldin
-      yopa oladi (auto-closer to'g'ri; manual yo'l qattiqlashtirilsin).
-- [ ] Webhook event -> payment holati ulash (`provider_event_id` dedup + `is_fresh`).
-- [ ] `Payment.held_at/released_at` timezone-aware ustunga o'tkazish.
-- [ ] WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push real adapteri,
-      Redis fan-out, real PSP adapteri, yurist xulosasi.
+**Bajarilgan (ikkinchi qattiqlashtirish to'lqini):**
+- [x] Token bekor qilish -> `TokenRevocationStore` (InMemory default + Redis ixtiyoriy, ttl)
+- [x] Fayl yuklash: MIME/kengaytma oq ro'yxati + 5MB limit (SVG/HTML rad)
+- [x] Rate limit: register/forgot/reset "auth" scope + `X-Forwarded-For` birinchi IP
+- [x] Webhook replay/dedup (`is_fresh` + `webhook_events` provider+event_id unique)
+- [x] `Payment.held_at/released_at` -> timestamptz
+- [x] WS avto-broadcast (sync bid -> async loop ko'prigi, best-effort)
+- [x] Push provayder abstraksiyasi (LogPushProvider; real FCM/APNs interfeys tayyor)
+
+**Hali ochiq:**
+- [ ] `close_auction` manual end_time qattiqlashtirish (auto-closer to'g'ri; manual
+      yo'l sotuvchiga erta yopishga ruxsat beradi — test churn sababli keyinga surildi)
+- [ ] Webhook event -> payment holatini yangilash (dedup/replay yadrosi bor; event
+      turiga qarab payment mutatsiyasi real PSP kelganda)
+- [ ] Push/SMS ni notification_service.create() ga ulash (adapter tayyor)
+- [ ] Redis fan-out (ko'p instansiya WS), `X-Forwarded-For` ishonchli proxy ro'yxati
+- [ ] Real PSP adapteri, yurist xulosasi (tashqi bog'liq)
 
 ## Qat'iy tartib qoidasi
 
