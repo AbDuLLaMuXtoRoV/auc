@@ -6,11 +6,14 @@ from app.api.v1.endpoints import (
     auth,
     bids,
     categories,
+    handovers,
     items,
     messages,
+    notifications,
     orders,
     payments,
     users,
+    ws,
 )
 
 api_router = APIRouter()
@@ -23,6 +26,9 @@ api_router.include_router(bids.router, prefix="/bids", tags=["bids"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
+api_router.include_router(handovers.router, prefix="/handovers", tags=["handovers"])
+api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(ws.router, tags=["ws"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 

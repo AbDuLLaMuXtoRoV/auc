@@ -36,6 +36,26 @@ class UserRole(StrEnum):
     ADMIN = "admin"
 
 
+class HandoverMethod(StrEnum):
+    LOCAL_MEETUP = "local_meetup"
+    DELIVERY = "delivery"
+
+
+class HandoverStatus(StrEnum):
+    PENDING = "pending"  # sotuvchi yaratdi, kod berildi
+    COMPLETED = "completed"  # xaridor kod bilan tasdiqladi -> capture
+    FAILED = "failed"
+
+
+class NotificationType(StrEnum):
+    OUTBID = "outbid"  # sizni ortda qoldirishdi
+    WON = "won"  # auksionda yutdingiz
+    SOLD = "sold"  # lotingiz sotildi
+    PAYMENT = "payment"  # to'lov holati
+    HANDOVER = "handover"  # topshirish
+    DISPUTE = "dispute"
+
+
 class PaymentStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
