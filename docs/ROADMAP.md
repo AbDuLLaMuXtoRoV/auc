@@ -100,13 +100,15 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 | **Real-time** | ✅ WebSocket `/ws/auctions/{id}` + ConnectionManager (relay). Redis pub/sub (ko'p instansiya) va bid'da avto-broadcast — TODO |
 | **Handover** | ✅ Kod bilan tasdiq oqimi (`handover_service`), kod yashirin, tasdiq -> capture |
 | **Xabarnomalar** | ✅ In-app (`notification_service`), OUTBID/WON/SOLD eventlarga ulangan. SMS/push — TODO |
-| Anti-fraud | Shill halqalari, yangi akkaunt limitlari, qurilma barmoq izi, sotuvchi reytingi |
-| Nizolar | Dispute oqimi, admin arbitraj, `release` qarori |
+| **Anti-fraud** | ✅ Signal tahlili (`fraud_service`): bir device/IP ko'p akkaunt, shill overlap, velocity. `bids.ip/device_id`. Admin endpoint |
+| **Nizolar** | ✅ Dispute oqimi (`dispute_service`): xaridor ochadi, admin capture/release. Auto-complete ochiq nizoda to'xtaydi |
+| **Observability** | ✅ Strukturaviy JSON logging + `request_id` middleware |
 | Mobil | Mobil klient (API allaqachon shunga mo'ljallangan) |
 | Beta | Cheklangan kategoriya + Toshkent, real pul, kichik hajm |
 
-**Real-time / Handover / Notifications ✅ MVP darajasida.** Qolgan ulanishlar:
-WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push, Redis fan-out.
+**Real-time / Handover / Notifications / Anti-fraud / Nizolar / Logging ✅ MVP darajasida.**
+Qolgan ulanishlar: WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push,
+Redis fan-out, sotuvchi reytingi, real PSP adapteri, yurist xulosasi.
 
 ## Qat'iy tartib qoidasi
 
