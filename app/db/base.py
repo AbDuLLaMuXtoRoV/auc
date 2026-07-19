@@ -9,6 +9,7 @@ from app.models.message import Conversation, Message
 from app.models.notification import Notification
 from app.models.order import Order
 from app.models.payment import Payment, PaymentMethod
+from app.models.review import Review
 from app.models.user import User
 
 __all__ = [
@@ -26,5 +27,6 @@ __all__ = [
     "Order",
     "PaymentMethod",
     "Payment",
+    "Review",
     "User",
 ]
