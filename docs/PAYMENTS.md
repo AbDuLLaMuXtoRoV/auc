@@ -31,13 +31,15 @@ Bu savollar hal bo'lmaguncha real PSP integratsiyasi boshlanmaydi.
 | Mock guard (`settings.allow_mock_payments`) | **BOR** — `config.py:39-46`, prod/staging'da o'chiq |
 | Karta tokenizatsiya (PAN saqlanmaydi) | **BOR** — `models/payment.py:12-23`, faqat `token_reference` |
 | IDOR himoyasi (o'z order/payment'ing) | **BOR**, toza |
-| **Escrow holatlari (HOLD / RELEASED)** | **YO'Q** |
-| **`idempotency_key`** | **YO'Q** |
-| **Webhook (va imzo tekshiruvi)** | **YO'Q** |
-| **`audit_log`** | **YO'Q** |
-| **Buyer premium (8%) hisobi** | **YO'Q** |
-| **Auto-complete 72 soat** | **YO'Q** |
-| Real PSP adapteri | **YO'Q** |
+| **Escrow holatlari (HELD / RELEASED / CANCELLED_HOLD)** | **BOR** — `payment_state.py`, migratsiya 202607170012 |
+| **`idempotency_key`** | **BOR** — partial unique, `create_hold` idempotent |
+| **Webhook imzo tekshiruvi** | **BOR** — `core/webhook.py` (HMAC, xom bayt), `POST /payments/webhooks/psp` 401 |
+| **`audit_log`** | **BOR** — `audit_service.py`, INSERT only, pul operatsiyalariga ulangan |
+| **Buyer premium (8%) hisobi** | **BOR** — `money.calc_buyer_premium`, hold summasida |
+| **Auto-complete 72 soat** | **BOR** — `auto_complete.py` worker |
+| PSP escrow interfeysi (hold/capture/release) | **BOR** — `BasePaymentProvider`, Mock |
+| Real PSP adapteri (Payme/Click) | **YO'Q** — huquqiy tekshiruvdan keyin |
+| Webhook hodisasini payment'ga ulash (event->status) | **YO'Q** — imzo bor, ishlov qism TODO |
 
 ## 3. PSP adapter shartnomasi
 

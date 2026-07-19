@@ -73,19 +73,23 @@ Maqsad: keyingi ishlar uchun ishonchli zamin. Busiz atomiklikni **sinab bo'lmayd
 **Faza C ✅ BAJARILDI.** Qolgan mayda ishlar (`duration_days` ni to'liq majburiy
 qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
-## Faza D — Escrow, idempotentlik, audit
+## Faza D — Escrow, idempotentlik, audit  (asosan BAJARILDI)
 
-- [ ] **Yurist bilan tekshirish**: hold/capture modeli litsenziya talab qiladimi (BLOKER)
-- [ ] `PaymentStatus`: `HOLD`, `RELEASED`, `CANCELLED_HOLD` qo'shish
-- [ ] `payments.idempotency_key` (unique) + `get_by_idempotency_key()`
-- [ ] `BasePaymentProvider`ni escrow shartnomasiga kengaytirish: `create_hold` / `capture` /
-      `release` / `verify_webhook`
-- [ ] Real PSP adapteri (Payme yoki Click — shartnomaga qarab)
-- [ ] **Webhook endpoint + imzo tekshiruvi** (xom bayt, `hmac.compare_digest`, replay himoyasi)
-- [ ] `audit_log` jadvali (INSERT only) + pul operatsiyalariga ulash
-- [ ] Buyer premium 8% (BPS 800), butun bo'linma bilan hisob
-- [ ] Auto-complete 72 soat (worker) + `orders.auto_complete_at`
-- [ ] Mock provayderni prod build'dan butunlay olib tashlash
+- [ ] **Yurist bilan tekshirish**: hold/capture modeli litsenziya talab qiladimi (BLOKER, biznes)
+- [x] `PaymentStatus`: `HELD` / `RELEASED` / `CANCELLED_HOLD` (migratsiya 202607170012)
+- [x] `payments.idempotency_key` (partial unique) + `get_by_idempotency_key()`
+- [x] `BasePaymentProvider` escrow shartnomasi: `create_hold` / `capture` / `release` + Mock
+- [x] Escrow state machine (`payment_state.py`) + hold/capture/release oqimi (`payment_service.py`)
+- [x] **Webhook imzo tekshiruvi** (`core/webhook.py`: HMAC, xom bayt, compare_digest, replay);
+      `POST /payments/webhooks/psp` — imzosiz 401
+- [x] `audit_log` jadvali (INSERT only) + pul operatsiyalariga ulangan (HELD/RELEASED/...)
+- [x] Buyer premium 8% (BPS 800), `money.calc_buyer_premium` (butun bo'linma)
+- [x] Auto-complete 72 soat worker (`auto_complete.py`) + `orders.auto_complete_at`
+- [ ] Webhook hodisasini payment holatiga ulash (event->status, `provider_event_id` idempotent)
+- [ ] Real PSP adapteri (Payme/Click) — huquqiy tekshiruvdan keyin
+- [ ] Mock provayderni prod build'dan butunlay olib tashlash (real PSP kelganda)
+
+**Faza D yadrosi ✅.** Qolgani tashqi bog'liq: yurist xulosasi + real PSP shartnomasi.
 
 ---
 
