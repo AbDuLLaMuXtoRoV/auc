@@ -39,9 +39,7 @@ def auto_complete_due_orders(db: Session) -> int:
     chetlab o'tiladi — nizo hal bo'lmaguncha pul muzlab turadi.
     """
     now = datetime.now(UTC)
-    open_dispute_orders = select(Dispute.order_id).where(
-        Dispute.status.in_(_OPEN_DISPUTE_STATUSES)
-    )
+    open_dispute_orders = select(Dispute.order_id).where(Dispute.status.in_(_OPEN_DISPUTE_STATUSES))
     due_order_ids = (
         db.execute(
             select(Order.id)
