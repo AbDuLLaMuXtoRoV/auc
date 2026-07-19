@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
-from app.models.enums import AuctionStatus, ItemStatus
+from app.models.enums import AuctionStatus, ItemStatus, NotificationType
 from app.models.item import Item
 from app.models.order import Order
 from app.models.user import User
@@ -17,6 +17,7 @@ from app.services.auction_state import (
     InvalidAuctionTransition,
     assert_transition,
 )
+from app.services.notification_service import NotificationService
 from app.services.order_service import OrderService
 
 
@@ -155,10 +156,25 @@ class AuctionService:
             assert_transition(auction.status, AuctionStatus.ENDED)
             auction.status = AuctionStatus.ENDED
             auction.item.status = ItemStatus.SOLD
-            # TODO: g'olib aniqlangach xabar + to'lov avtorizatsiyasi.
             self.db.add(auction)
             self.db.flush()
             OrderService(self.db).create_order_for_winning_auction(auction)
+            # G'olib va sotuvchi xabardor qilinadi (tranzaksiya ichida, atomik).
+            notifier = NotificationService(self.db)
+            notifier.create(
+                user_id=winning_bid.bidder_id,
+                type=NotificationType.WON,
+                title="Auksionda yutdingiz!",
+                body="Tabriklaymiz — lotni yutib oldingiz. To'lovni amalga oshiring.",
+                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
+            )
+            notifier.create(
+                user_id=auction.seller_id,
+                type=NotificationType.SOLD,
+                title="Lotingiz sotildi",
+                body="Auksioningiz g'olib bilan yakunlandi.",
+                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
+            )
             self.db.commit()
         except Exception:
             self.db.rollback()

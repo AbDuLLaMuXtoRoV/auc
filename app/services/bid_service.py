@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.auction import Auction
 from app.models.bid import Bid
-from app.models.enums import AuctionStatus, BidStatus, ItemStatus
+from app.models.enums import AuctionStatus, BidStatus, ItemStatus, NotificationType
 from app.models.user import User
 from app.repositories.auction_repository import AuctionRepository
 from app.schemas.bid import BidCreate
 from app.services.auction_state import assert_transition
+from app.services.notification_service import NotificationService
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -111,7 +112,7 @@ class BidService:
         )
 
         if leader_defends:
-            # Holat A: leader proxy himoyasi.
+            # Holat A: leader proxy himoyasi. Chaqiruvchi darhol ortda qoldi.
             caller_bid.status = BidStatus.OUTBID
             self.db.add(caller_bid)
 
@@ -129,6 +130,7 @@ class BidService:
             auction.current_price = new_price
             auction.winning_bid = proxy_bid
             # leader_id, high_bidder_max o'zgarmaydi
+            self._notify_outbid(auction, bidder.id, new_price)
             return caller_bid
 
         # Holat B: chaqiruvchi yangi (yoki o'z narxini oshiruvchi) leader.
@@ -138,6 +140,9 @@ class BidService:
         auction.highest_bidder_id = bidder.id
         auction.high_bidder_max = max_amount
         auction.winning_bid = caller_bid
+        # Eski leader (agar boshqa odam bo'lsa) ortda qoldi.
+        if leader_id is not None and leader_id != bidder.id:
+            self._notify_outbid(auction, leader_id, amount)
         return caller_bid
 
     def _demote_current_winner(self, auction: Auction) -> None:
@@ -146,6 +151,16 @@ class BidService:
         if previous is not None:
             previous.status = BidStatus.OUTBID
             self.db.add(previous)
+
+    def _notify_outbid(self, auction: Auction, user_id: int, new_price: int) -> None:
+        """Ortda qolgan bidderga OUTBID bildirishnomasi (bid tranzaksiyasi ichida)."""
+        NotificationService(self.db).create(
+            user_id=user_id,
+            type=NotificationType.OUTBID,
+            title="Sizni ortda qoldirishdi",
+            body="Auksionda taklifingiz ortda qoldi. Yangi taklif qo'ying.",
+            payload={"auction_id": auction.id, "current_price": str(new_price)},
+        )
 
     def _activate_if_started_locked(self, auction: Auction) -> None:
         """SCHEDULED -> ACTIVE, commit QILMASDAN.
