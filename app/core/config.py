@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     auto_complete_hours: int = 72  # xaridor sukut saqlasa order shu vaqtda yakunlanadi
     # PSP webhook imzo maxfiy kaliti. Prod'da .env orqali beriladi.
     psp_webhook_secret: str = "change-me-webhook-secret"
+    # Auto-complete fon vazifasi (auction_closer kabi, testda o'chiq).
+    auto_complete_enabled: bool = False
+    auto_complete_interval_seconds: int = 300
 
     @property
     def is_production(self) -> bool:

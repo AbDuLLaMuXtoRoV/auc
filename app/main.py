@@ -8,20 +8,23 @@ from starlette.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.services.auction_closer import start_auction_closer, stop_auction_closer
+from app.services.auto_complete import start_auto_complete, stop_auto_complete
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Ilova hayotiy sikli: closer worker'ni ishga tushiradi va to'xtatadi.
+    """Ilova hayotiy sikli: fon worker'larni ishga tushiradi va to'xtatadi.
 
-    Worker faqat yoqilgan va test bo'lmagan muhitda ishga tushadi
-    (guard `start_auction_closer` ichida). Shutdown'da task bekor qilinadi.
+    Worker'lar faqat yoqilgan va test bo'lmagan muhitda ishga tushadi
+    (guard start_* ichida). Shutdown'da task'lar bekor qilinadi.
     """
     closer_task = start_auction_closer()
+    auto_complete_task = start_auto_complete()
     try:
         yield
     finally:
         await stop_auction_closer(closer_task)
+        await stop_auto_complete(auto_complete_task)
 
 
 def create_app() -> FastAPI:
