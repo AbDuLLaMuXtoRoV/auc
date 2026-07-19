@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, ForeignKey, Index, String, text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, text
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,8 +57,9 @@ class Payment(Base):
     # Idempotentlik: har pul operatsiyasi yagona kalit bilan. Unique index
     # ikki marta hold/capture'ning oldini oladi (parallel retry ham).
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    held_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    released_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    # timezone-aware (timestamptz) — datetime.now(UTC) tz'sini saqlaydi.
+    held_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     auto_complete_enabled: bool = False
     auto_complete_interval_seconds: int = 300
 
+    # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
+    redis_url: str = "redis://localhost:6379/0"
+    # Fayl yuklash cheklovlari (stored XSS / DoS himoyasi).
+    upload_max_bytes: int = 5_000_000  # 5 MB
+
     @property
     def is_production(self) -> bool:
         """Prod yoki staging — ya'ni real pul va real foydalanuvchilar muhiti."""

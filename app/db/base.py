@@ -11,6 +11,7 @@ from app.models.order import Order
 from app.models.payment import Payment, PaymentMethod
 from app.models.review import Review
 from app.models.user import User
+from app.models.webhook_event import WebhookEvent
 
 __all__ = [
     "AuditLog",
@@ -29,4 +30,5 @@ __all__ = [
     "Payment",
     "Review",
     "User",
+    "WebhookEvent",
 ]
