@@ -30,6 +30,10 @@ _lock = threading.Lock()
 # paytida shu jadval orqali olinadi, import paytida qotib qolmaydi.
 _SCOPE_LIMIT_SETTING: dict[str, str] = {
     "login": "rate_limit_login_per_minute",
+    # register / forgot / reset — login bilan BIR XIL limit qiymati, lekin
+    # ALOHIDA bucket (bucket kaliti scope'ni o'z ichiga oladi), shunda ular
+    # login brute-force hisobiga aralashmaydi.
+    "auth": "rate_limit_login_per_minute",
     "bid": "rate_limit_bid_per_minute",
 }
 
@@ -40,8 +44,25 @@ def reset_rate_limits() -> None:
         _hits.clear()
 
 
-def _client_identifier(request: Request) -> str:
-    """Mijozni IP bo'yicha aniqlaydi; aniqlab bo'lmasa 'unknown'."""
+def _identifier(request: Request) -> str:
+    """Mijozni IP bo'yicha aniqlaydi; aniqlab bo'lmasa 'unknown'.
+
+    Reverse proxy (nginx/ALB) ortida `request.client.host` proxy'ning IP'si
+    bo'ladi — o'shanda BARCHA mijoz bitta IP'ga tushib, limit global bo'lib
+    qoladi. Buning oldini olish uchun `X-Forwarded-For` bo'lsa, undagi BIRINCHI
+    IP (asl mijoz) ishlatiladi.
+
+    OGOHLANTIRISH: `X-Forwarded-For` mijoz tomonidan soxtalashtirilishi mumkin
+    (spoofing). Unga faqat ISHONCHLI proxy ortida ishonish kerak — proxy
+    sarlavhani qayta yozib, soxta qiymatni almashtiradi.
+    TODO(kelajak): ishonchli proxy IP ro'yxatini sozlash va faqat o'shalardan
+    kelgan XFF'ga ishonish.
+    """
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        first_ip = forwarded.split(",")[0].strip()
+        if first_ip:
+            return first_ip
     if request.client is not None and request.client.host:
         return request.client.host
     return "unknown"
@@ -72,7 +93,7 @@ class RateLimiter:
             return
 
         limit = self._limit()
-        key = (_client_identifier(request), self.scope)
+        key = (_identifier(request), self.scope)
         now = time.monotonic()
         window_start = now - self.window_seconds
 

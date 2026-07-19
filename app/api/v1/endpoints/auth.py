@@ -23,7 +23,12 @@ from app.services.auth_service import AuthService
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RateLimiter("auth", 60))],
+)
 def register(payload: UserCreate, db: DbSession) -> User:
     return AuthService(db).register_user(payload)
 
@@ -56,7 +61,7 @@ def logout(payload: LogoutRequest, token: BearerToken, db: DbSession) -> Message
 @router.post(
     "/forgot-password",
     response_model=PasswordResetTokenResponse,
-    dependencies=[Depends(RateLimiter("login", 60))],
+    dependencies=[Depends(RateLimiter("auth", 60))],
 )
 def forgot_password(
     payload: ForgotPasswordRequest,
@@ -72,7 +77,11 @@ def forgot_password(
     )
 
 
-@router.post("/reset-password", response_model=MessageResponse)
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    dependencies=[Depends(RateLimiter("auth", 60))],
+)
 def reset_password(payload: ResetPasswordRequest, db: DbSession) -> MessageResponse:
     AuthService(db).reset_password(payload.token, payload.new_password)
     return MessageResponse(message="Password has been reset")
