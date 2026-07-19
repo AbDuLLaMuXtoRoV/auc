@@ -5,7 +5,8 @@ from datetime import UTC, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models.enums import OrderStatus, PaymentStatus
+from app.models.dispute import Dispute
+from app.models.enums import DisputeReason, DisputeStatus, OrderStatus, PaymentStatus
 from app.models.order import Order
 from app.models.payment import Payment
 from app.services.auto_complete import auto_complete_due_orders
@@ -72,6 +73,34 @@ def test_auto_complete_captures_due_hold(client: TestClient, db_session: Session
     db_session.expire_all()
     assert db_session.get(Payment, payment_id).status == PaymentStatus.RELEASED
     assert db_session.get(Order, order_id).status == OrderStatus.COMPLETED
+
+
+def test_auto_complete_skips_open_dispute(client: TestClient, db_session: Session) -> None:
+    """Ochiq nizosi bor order avtomatik yakunlanmaydi — pul muzlab qoladi."""
+    seller = _register_and_login(client, "seller@example.com")
+    buyer = _register_and_login(client, "buyer@example.com")
+    order_id, payment_id = _order_with_hold(client, seller, buyer, "auto-hold-0003")
+
+    order = db_session.get(Order, order_id)
+    order.auto_complete_at = datetime.now(UTC) - timedelta(minutes=1)
+    # Ochiq nizo qo'shamiz.
+    db_session.add(
+        Dispute(
+            order_id=order_id,
+            payment_id=payment_id,
+            opened_by=db_session.get(Payment, payment_id).buyer_id,
+            reason=DisputeReason.NOT_RECEIVED,
+            status=DisputeStatus.OPEN,
+        )
+    )
+    db_session.commit()
+
+    done = auto_complete_due_orders(db_session)
+    assert done == 0
+
+    db_session.expire_all()
+    assert db_session.get(Payment, payment_id).status == PaymentStatus.HELD
+    assert db_session.get(Order, order_id).status == OrderStatus.PICKUP_PENDING
 
 
 def test_auto_complete_skips_future_hold(client: TestClient, db_session: Session) -> None:

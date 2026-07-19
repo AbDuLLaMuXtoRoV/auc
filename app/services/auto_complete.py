@@ -18,10 +18,14 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.models.enums import OrderStatus, PaymentStatus
+from app.models.dispute import Dispute
+from app.models.enums import DisputeStatus, OrderStatus, PaymentStatus
 from app.models.order import Order
 from app.repositories.payment_repository import PaymentRepository
 from app.services.payment_service import PaymentService
+
+# Ochiq nizo bo'lgan order avtomatik yakunlanmaydi — pul muzlab qoladi.
+_OPEN_DISPUTE_STATUSES = (DisputeStatus.OPEN, DisputeStatus.UNDER_REVIEW)
 
 logger = logging.getLogger(__name__)
 
@@ -31,15 +35,20 @@ def auto_complete_due_orders(db: Session) -> int:
 
     Toza, fon loop'siz funksiya — to'g'ridan-to'g'ri testlanadi.
     `auto_complete_at <= now` va status PICKUP_PENDING (ya'ni hold qilingan,
-    hali tasdiqlanmagan) order'lar tanlanadi.
+    hali tasdiqlanmagan) order'lar tanlanadi. OCHIQ NIZOSI bor order'lar
+    chetlab o'tiladi — nizo hal bo'lmaguncha pul muzlab turadi.
     """
     now = datetime.now(UTC)
+    open_dispute_orders = select(Dispute.order_id).where(
+        Dispute.status.in_(_OPEN_DISPUTE_STATUSES)
+    )
     due_order_ids = (
         db.execute(
             select(Order.id)
             .where(Order.status == OrderStatus.PICKUP_PENDING)
             .where(Order.auto_complete_at.is_not(None))
             .where(Order.auto_complete_at <= now)
+            .where(Order.id.not_in(open_dispute_orders))
         )
         .scalars()
         .all()
