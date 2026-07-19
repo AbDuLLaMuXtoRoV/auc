@@ -95,15 +95,18 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
 ## Fazadan keyin
 
-| Bosqich | Nima |
+| Bosqich | Holat |
 |---|---|
-| Real-time | FastAPI WebSocket `/ws/auctions/{id}` — narx, qolgan vaqt, cho'zilish. Fan-out Redis pub/sub. Jonli video YO'Q |
-| Handover | Topshirish oqimi: kod/QR tasdiq, uchrashuv joyi, `handover_confirmed_at` |
-| Xabarnomalar | Outbid, yutdingiz, deadline yaqin, to'lov kutilmoqda. SMS/push |
-| Anti-fraud | Shill halqalari (bir guruh bir-birini ko'tarishi), yangi akkaunt limitlari, qurilma barmoq izi, sotuvchi reytingi |
+| **Real-time** | ✅ WebSocket `/ws/auctions/{id}` + ConnectionManager (relay). Redis pub/sub (ko'p instansiya) va bid'da avto-broadcast — TODO |
+| **Handover** | ✅ Kod bilan tasdiq oqimi (`handover_service`), kod yashirin, tasdiq -> capture |
+| **Xabarnomalar** | ✅ In-app (`notification_service`), OUTBID/WON/SOLD eventlarga ulangan. SMS/push — TODO |
+| Anti-fraud | Shill halqalari, yangi akkaunt limitlari, qurilma barmoq izi, sotuvchi reytingi |
 | Nizolar | Dispute oqimi, admin arbitraj, `release` qarori |
 | Mobil | Mobil klient (API allaqachon shunga mo'ljallangan) |
 | Beta | Cheklangan kategoriya + Toshkent, real pul, kichik hajm |
+
+**Real-time / Handover / Notifications ✅ MVP darajasida.** Qolgan ulanishlar:
+WS avto-broadcast (sync bid -> async loop ko'prigi), SMS/push, Redis fan-out.
 
 ## Qat'iy tartib qoidasi
 
