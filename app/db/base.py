@@ -2,6 +2,7 @@ from app.models.auction import Auction
 from app.models.audit_log import AuditLog
 from app.models.bid import Bid
 from app.models.category import Category
+from app.models.dispute import Dispute
 from app.models.handover import Handover
 from app.models.item import Item, ItemImage
 from app.models.message import Conversation, Message
@@ -16,6 +17,7 @@ __all__ = [
     "Bid",
     "Category",
     "Conversation",
+    "Dispute",
     "Handover",
     "Item",
     "ItemImage",

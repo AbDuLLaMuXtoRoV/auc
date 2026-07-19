@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Index
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, String
 from sqlalchemy import Enum as SqlEnum
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -30,6 +31,9 @@ class Bid(Base):
     max_amount: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     # is_proxy — bu yozuv tizim tomonidan avtomatik ko'tarilganmi (leader himoyasi).
     is_proxy: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Anti-fraud izlari: shill halqasi / bir qurilmadan ko'p akkaunt aniqlash.
+    ip: Mapped[str | None] = mapped_column(INET, nullable=True)
+    device_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     status: Mapped[BidStatus] = mapped_column(
         SqlEnum(BidStatus, name="bid_status"),
         default=BidStatus.VALID,

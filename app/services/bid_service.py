@@ -30,7 +30,14 @@ class BidService:
         self.db = db
         self.auctions = AuctionRepository(db)
 
-    def place_bid(self, auction_id: int, bidder: User, payload: BidCreate) -> Bid:
+    def place_bid(
+        self,
+        auction_id: int,
+        bidder: User,
+        payload: BidCreate,
+        ip: str | None = None,
+        device_id: str | None = None,
+    ) -> Bid:
         """Bid qo'yadi. ATOMIK — race condition'siz.
 
         Butun mantiq BITTA tranzaksiyada:
@@ -61,6 +68,9 @@ class BidService:
             self._validate_bid(auction, bidder, payload)
 
             returned_bid = self._resolve_bid(auction, bidder, payload)
+            # Anti-fraud izlari — chaqiruvchining bid yozuviga (proxy'ga emas).
+            returned_bid.ip = ip
+            returned_bid.device_id = device_id
             auction.updated_at = datetime.now(UTC)
             self._apply_soft_close_extension(auction)
 

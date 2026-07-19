@@ -6,6 +6,8 @@ from app.api.v1.endpoints import (
     auth,
     bids,
     categories,
+    disputes,
+    fraud,
     handovers,
     items,
     messages,
@@ -28,6 +30,8 @@ api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
 api_router.include_router(handovers.router, prefix="/handovers", tags=["handovers"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(disputes.router, prefix="/disputes", tags=["disputes"])
+api_router.include_router(fraud.router, prefix="/fraud", tags=["fraud"])
 api_router.include_router(ws.router, tags=["ws"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 

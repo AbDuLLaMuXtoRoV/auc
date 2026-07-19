@@ -56,6 +56,21 @@ class NotificationType(StrEnum):
     DISPUTE = "dispute"
 
 
+class DisputeReason(StrEnum):
+    NOT_RECEIVED = "not_received"  # tovar kelmadi
+    NOT_AS_DESCRIBED = "not_as_described"  # ta'rifga mos emas
+    DAMAGED = "damaged"  # shikastlangan
+    FAKE = "fake"  # soxta
+    OTHER = "other"
+
+
+class DisputeStatus(StrEnum):
+    OPEN = "open"
+    UNDER_REVIEW = "under_review"
+    RESOLVED_BUYER = "resolved_buyer"  # xaridor foydasiga (release/refund)
+    RESOLVED_SELLER = "resolved_seller"  # sotuvchi foydasiga (capture)
+
+
 class PaymentStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"

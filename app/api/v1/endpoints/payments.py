@@ -1,10 +1,9 @@
-import ipaddress
-
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.dependencies import CurrentUser, DbSession
+from app.core.request_meta import client_ip
 from app.core.webhook import verify_signature
 from app.models.payment import Payment, PaymentMethod
 from app.schemas.payment import (
@@ -21,19 +20,7 @@ router = APIRouter()
 
 
 def _client_ip(request: Request) -> str | None:
-    """Mijoz IP'sini qaytaradi — faqat haqiqiy IP bo'lsa.
-
-    audit_log.ip — INET turi. TestClient yoki noto'g'ri host ("testclient")
-    kelsa Postgres DataError beradi, shuning uchun validatsiya qilinadi.
-    """
-    if request.client is None:
-        return None
-    host = request.client.host
-    try:
-        ipaddress.ip_address(host)
-    except ValueError:
-        return None
-    return host
+    return client_ip(request)
 
 
 @router.post("/methods", response_model=PaymentMethodRead, status_code=status.HTTP_201_CREATED)
