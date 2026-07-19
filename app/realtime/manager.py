@@ -32,6 +32,15 @@ class ConnectionManager:
         await ws.accept()
         self._rooms.setdefault(auction_id, set()).add(ws)
 
+    def add(self, ws: WebSocket, auction_id: int) -> None:
+        """Allaqachon `accept` qilingan WebSocket'ni auksion room'iga qo'shadi.
+
+        `connect`'dan farqi: handshake'ni QABUL QILMAYDI. Endpoint tokenni
+        tekshirish uchun `accept`'ni o'zi chaqirgan holatlarda ishlatiladi
+        (accept ikki marta chaqirilsa xato bo'ladi).
+        """
+        self._rooms.setdefault(auction_id, set()).add(ws)
+
     def disconnect(self, ws: WebSocket, auction_id: int) -> None:
         """WebSocket'ni room'dan olib tashlaydi; room bo'shab qolsa uni tozalaydi.
 

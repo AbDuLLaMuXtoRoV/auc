@@ -1,8 +1,10 @@
 """Auksion WebSocket relay + kanal izolyatsiyasi testlari.
 
-DB kerak emas — WS endpoint faqat in-memory `ConnectionManager` bilan ishlaydi.
-Biroq `client` fixture conftest orqali keladi (real Postgres'ga ulanadi):
-zarari yo'q, WS handshake DB'ga tegmaydi.
+WS endpoint asosan in-memory `ConnectionManager` bilan ishlaydi, biroq endi
+ulanish uchun yaroqli access JWT MAJBURIY (`?token=`). Shu sabab har ulanish
+oldidan foydalanuvchi yaratilib login qilinadi va olingan access_token query
+parametri sifatida beriladi. Token oqimidan keyingi relay/izolyatsiya mantig'i
+o'zgarmagan.
 
 DIQQAT: broadcast APP EVENT LOOP ichida sodir bo'ladi (mijoz xabar yuboradi →
 endpoint `manager.broadcast` chaqiradi). Shu sabab testda `manager.broadcast`
@@ -11,13 +13,20 @@ endpoint relay orqali sinaladi.
 """
 
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from tests.conftest import create_user
 
 
-def test_broadcast_reaches_other_client_in_same_room(client: TestClient) -> None:
+def test_broadcast_reaches_other_client_in_same_room(
+    client: TestClient, db_session: Session
+) -> None:
     """Bir mijoz yuborgan xabar shu auksion kanalidagi boshqa mijozga yetadi."""
+    tok = create_user(client, db_session, email="ws1@example.com").access_token
+
     with (
-        client.websocket_connect("/api/v1/ws/auctions/1") as ws1,
-        client.websocket_connect("/api/v1/ws/auctions/1") as ws2,
+        client.websocket_connect(f"/api/v1/ws/auctions/1?token={tok}") as ws1,
+        client.websocket_connect(f"/api/v1/ws/auctions/1?token={tok}") as ws2,
     ):
         payload = {"type": "BID_PLACED", "price": "1000"}
         ws1.send_json(payload)
@@ -25,7 +34,7 @@ def test_broadcast_reaches_other_client_in_same_room(client: TestClient) -> None
         assert ws2.receive_json() == payload
 
 
-def test_channels_are_isolated_across_auctions(client: TestClient) -> None:
+def test_channels_are_isolated_across_auctions(client: TestClient, db_session: Session) -> None:
     """Boshqa auksion kanalidagi mijoz begona xabarni OLMAYDI (izolyatsiya).
 
     ws3 auksion 2 da. Avval auksion 1 ga xabar yuboriladi (ws2 oladi), so'ng
@@ -33,10 +42,12 @@ def test_channels_are_isolated_across_auctions(client: TestClient) -> None:
     aynan auksion-2 xabari bo'lishi kerak — agar auksion-1 xabari oqib
     o'tganida, FIFO navbatda u birinchi kelardi.
     """
+    tok = create_user(client, db_session, email="ws2@example.com").access_token
+
     with (
-        client.websocket_connect("/api/v1/ws/auctions/1") as ws1,
-        client.websocket_connect("/api/v1/ws/auctions/1") as ws2,
-        client.websocket_connect("/api/v1/ws/auctions/2") as ws3,
+        client.websocket_connect(f"/api/v1/ws/auctions/1?token={tok}") as ws1,
+        client.websocket_connect(f"/api/v1/ws/auctions/1?token={tok}") as ws2,
+        client.websocket_connect(f"/api/v1/ws/auctions/2?token={tok}") as ws3,
     ):
         auction1_msg = {"type": "BID_PLACED", "auction": 1, "price": "1000"}
         auction2_msg = {"type": "BID_PLACED", "auction": 2, "price": "5000"}
