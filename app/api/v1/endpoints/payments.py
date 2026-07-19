@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
@@ -15,6 +17,7 @@ from app.schemas.payment import (
     PaymentRead,
 )
 from app.services.payment_service import PaymentService
+from app.services.webhook_service import WebhookService
 
 router = APIRouter()
 
@@ -102,20 +105,46 @@ def release_hold(
 
 
 @router.post("/webhooks/psp")
-async def psp_webhook(request: Request) -> dict[str, bool]:
+async def psp_webhook(request: Request, db: DbSession) -> dict[str, bool]:
     """PSP webhook. Imzosiz qabul qilinmaydi (KRITIK xavfsizlik).
 
     Imzo XOM BAYT ustida tekshiriladi (parse qilingan JSON emas),
     `hmac.compare_digest` bilan. Imzo noto'g'ri → 401, hech qanday yon
     effektsiz. Autentifikatsiyadan ozod, lekin imzodan ozod EMAS.
+
+    Imzo to'g'ri bo'lgach, hodisa replay + dedup himoyasidan o'tadi
+    (`WebhookService`): eski hodisa → 400 (stale), takroriy hodisa →
+    idempotent tarzda e'tiborsiz (200), yangi hodisa qayta ishlanadi (200).
     """
     raw_body = await request.body()
     signature = request.headers.get("x-signature", "")
     if not verify_signature(raw_body, signature, settings.psp_webhook_secret):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")
-    # TODO (Faza D davomi): hodisani parse qilib, PSP holatidan payment'ni
-    # yangilash (provider_event_id bo'yicha idempotent). Hozircha imzo
-    # tekshiruvi — eng kritik qism — o'rnatildi.
+
+    try:
+        payload = json.loads(raw_body)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON body"
+        ) from exc
+
+    event_id = payload.get("event_id") if isinstance(payload, dict) else None
+    timestamp = payload.get("timestamp") if isinstance(payload, dict) else None
+    event_type = payload.get("type") if isinstance(payload, dict) else None
+    if not event_id or not isinstance(timestamp, int) or not event_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing event_id, timestamp or type",
+        )
+
+    result = WebhookService(db).process(
+        provider="psp",
+        event_id=str(event_id),
+        timestamp=timestamp,
+        payload=payload,
+    )
+    if result == "stale":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Stale webhook event")
     return {"ok": True}
 
 

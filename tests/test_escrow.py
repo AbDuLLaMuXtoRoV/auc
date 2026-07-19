@@ -226,7 +226,15 @@ def test_webhook_rejects_bad_signature(client: TestClient) -> None:
 
 
 def test_webhook_accepts_valid_signature(client: TestClient) -> None:
-    raw = json.dumps({"event": "capture", "id": "hold_x"}).encode()
+    # Yangi kontrakt: event_id + timestamp (unix) + type majburiy (dedup/replay).
+    raw = json.dumps(
+        {
+            "event_id": "evt-escrow-1",
+            "type": "capture",
+            "timestamp": int(datetime.now(UTC).timestamp()),
+            "id": "hold_x",
+        }
+    ).encode()
     sig = compute_signature(raw, settings.psp_webhook_secret)
     r = client.post(
         "/api/v1/payments/webhooks/psp",
