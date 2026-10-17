@@ -1,0 +1,53 @@
+"""Celery ilovasi — fon vazifalari uchun (broker/backend: Redis).
+
+Vazifalar:
+  * Davriy (beat): muddati o'tgan auksionlarni yopish, auto-complete order'lar.
+    Ilgari bu `main.py` lifespan'idagi in-process asyncio loop edi; prod'da
+    Celery beat ishonchli, ko'p-instans muhitida bir marta bajaradi.
+  * Navbatli (queue): push bildirishnoma va email yuborish — so'rov oqimidan
+    chiqarib, foydalanuvchini kutdirmaydi.
+
+Worker:  celery -A app.core.celery_app worker -l info
+Beat:    celery -A app.core.celery_app beat -l info
+"""
+
+from __future__ import annotations
+
+from celery import Celery
+from celery.schedules import schedule
+
+from app.core.config import settings
+
+celery_app = Celery(
+    "bazart",
+    broker=settings.effective_celery_broker,
+    backend=settings.effective_celery_backend,
+    include=[
+        "app.tasks.scheduled",
+        "app.tasks.notifications",
+        "app.tasks.email",
+    ],
+)
+
+celery_app.conf.update(
+    timezone="UTC",
+    enable_utc=True,
+    task_always_eager=settings.celery_eager,
+    task_eager_propagates=True,
+    task_acks_late=True,
+    worker_max_tasks_per_child=1000,
+    broker_connection_retry_on_startup=True,
+)
+
+# Davriy vazifalar — faqat beat yoqilganda ro'yxatga olinadi (aks holda bo'sh).
+if settings.celery_beat_enabled:
+    celery_app.conf.beat_schedule = {
+        "close-due-auctions": {
+            "task": "app.tasks.scheduled.close_due_auctions_task",
+            "schedule": schedule(settings.auction_closer_interval_seconds),
+        },
+        "auto-complete-orders": {
+            "task": "app.tasks.scheduled.auto_complete_orders_task",
+            "schedule": schedule(settings.auto_complete_interval_seconds),
+        },
+    }

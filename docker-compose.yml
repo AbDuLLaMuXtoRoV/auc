@@ -25,6 +25,42 @@ services:
       minio:
         condition: service_healthy
 
+  # Celery worker — push/email va (beat topshirsa) davriy vazifalarni bajaradi.
+  worker:
+    build: .
+    command: celery -A app.core.celery_app worker -l info
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-bazart}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BEAT_ENABLED: "true"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Celery beat — davriy vazifalarni rejalashtiradi (auksion yopish, auto-complete).
+  beat:
+    build: .
+    command: celery -A app.core.celery_app beat -l info
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-bazart}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BEAT_ENABLED: "true"
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+
   db:
     image: postgres:16
     environment:

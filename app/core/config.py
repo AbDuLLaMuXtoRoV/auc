@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     auction_closer_enabled: bool = False
     auction_closer_interval_seconds: int = 5
 
+    # Dinamik (darajali) minimal stavka qadami poli. Prod'da yoqiq: narxga
+    # qarab qadam avtomatik oshadi (5 000 so'mdan boshlab). Test muhitida
+    # conftest uni o'chiradi — kichik-summali mavjud test korpusi buzilmasin;
+    # jadval mantig'i pure-function + bitta integratsiya testida tekshiriladi.
+    tiered_bid_increment_enabled: bool = True
+
     # Rate limiting (bid/login brute-force himoyasi).
     rate_limit_enabled: bool = True
     rate_limit_login_per_minute: int = 5
@@ -54,14 +60,74 @@ class Settings(BaseSettings):
     auto_complete_hours: int = 72  # xaridor sukut saqlasa order shu vaqtda yakunlanadi
     # PSP webhook imzo maxfiy kaliti. Prod'da .env orqali beriladi.
     psp_webhook_secret: str = INSECURE_DEFAULT_WEBHOOK_SECRET
+    # Real PSP (escrow hold/capture/release) HTTP adapteri sozlamalari.
+    # Bo'sh psp_base_url = adapter o'chiq (prod'da .env orqali beriladi).
+    # "psp" provayderi so'ralsa-yu base_url bo'sh bo'lsa — aniq config xatosi.
+    psp_base_url: str = ""
+    psp_api_key: str = ""  # so'rov imzosi (HMAC) va Authorization uchun
+    psp_timeout_seconds: float = 15.0
     # Auto-complete fon vazifasi (auction_closer kabi, testda o'chiq).
     auto_complete_enabled: bool = False
     auto_complete_interval_seconds: int = 300
 
     # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
     redis_url: str = "redis://localhost:6379/0"
+    # Frontend (Next.js) origin'lari — brauzerdan API'ga so'rov yuborishi uchun CORS.
+    # .env orqali JSON ro'yxat sifatida beriladi: CORS_ORIGINS='["https://bazart.uz"]'
+    cors_origins: list[str] = ["http://localhost:3000"]
+
+    # Celery (fon vazifalari: auksion yopish, auto-complete, push, email).
+    # Broker/backend berilmasa — redis_url ishlatiladi.
+    celery_broker_url: str | None = None
+    celery_result_backend: str | None = None
+    # True bo'lsa vazifa worker'siz, chaqiruv joyida (inline) bajariladi.
+    # Test/worker yo'q local uchun qulay; prod'da False (worker bajaradi).
+    celery_task_always_eager: bool = False
+    # Celery beat davriy vazifalarini yoqish (prod'da True). Yoqilganda
+    # in-process pollerlar (main.py lifespan) o'rniga Celery beat ishlaydi.
+    celery_beat_enabled: bool = False
+
+    @property
+    def effective_celery_broker(self) -> str:
+        return self.celery_broker_url or self.redis_url
+
+    @property
+    def effective_celery_backend(self) -> str:
+        return self.celery_result_backend or self.redis_url
+
+    @property
+    def celery_eager(self) -> bool:
+        """Test muhitida doim inline — worker/broker talab qilinmaydi."""
+        return self.celery_task_always_eager or self.environment == "test"
+
     # Fayl yuklash cheklovlari (stored XSS / DoS himoyasi).
     upload_max_bytes: int = 5_000_000  # 5 MB
+    # Bir e'longa maksimal rasm soni.
+    max_images_per_item: int = 10
+
+    # Telegram bildirishnoma (O'zbekiston uchun asosiy kanal — "stavkangiz
+    # oshib ketdi" xabari push o'rnida). Token bo'sh / enabled False bo'lsa
+    # yetkazib berish log provayderga tushadi (graceful, ilova yiqilmaydi).
+    telegram_enabled: bool = False
+    telegram_bot_token: str = ""
+    telegram_api_timeout_seconds: float = 10.0
+
+    # OTP / telefon tasdiqlash (SMS). sms_provider="log" — kod log'ga yoziladi
+    # (local/test); real provayder keyin ulanadi. Kodlar HASH bilan saqlanadi.
+    otp_enabled: bool = True
+    sms_provider: str = "log"  # "log" | "eskiz" | ... (real provayder keyin)
+    otp_ttl_seconds: int = 300  # kod amal qilish muddati (5 daqiqa)
+    otp_code_length: int = 6
+    otp_max_attempts: int = 5  # noto'g'ri urinishdan keyin kod bloklanadi
+    otp_resend_cooldown_seconds: int = 60  # 1 SMS / 60 soniya
+    otp_daily_limit_per_phone: int = 5  # kuniga bir raqamga
+    otp_daily_limit_per_ip: int = 20  # kuniga bir IP'ga
+
+    # Google orqali kirish (Google Identity Services ID token). Bo'sh bo'lsa
+    # /auth/google o'chiq (503). Qiymat — Google Cloud'dagi OAuth Web Client ID;
+    # ID token `aud` maydoni aynan shu bilan solishtiriladi: boshqa ilova uchun
+    # chiqarilgan token bizda kirish uchun ishlatilmasin.
+    google_client_id: str = ""
 
     @property
     def is_production(self) -> bool:

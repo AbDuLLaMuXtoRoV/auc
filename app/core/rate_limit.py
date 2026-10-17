@@ -21,6 +21,7 @@ import time
 from fastapi import HTTPException, Request, status
 
 from app.core.config import settings
+from app.core.redis_client import get_redis
 
 # (identifier, scope) -> shu oynadagi so'rov vaqtlari (monotonic sekundlar).
 _hits: dict[tuple[str, str], list[float]] = {}
@@ -39,9 +40,23 @@ _SCOPE_LIMIT_SETTING: dict[str, str] = {
 
 
 def reset_rate_limits() -> None:
-    """Barcha hisoblangan holatni tozalaydi (testlar orasida ishlatiladi)."""
+    """Barcha hisoblangan holatni tozalaydi (testlar orasida ishlatiladi).
+
+    Ham in-memory zaxira, ham Redis fixed-window kalitlari (`ratelimit:*`)
+    tozalanadi. Redis yoqilgan muhitda faqat in-memory'ni tozalash yetarli emas:
+    bucket testlar orasida saqlanib, keyingi test yolg'on 429 oladi.
+    """
     with _lock:
         _hits.clear()
+    client = get_redis()
+    if client is not None:
+        try:
+            keys = list(client.scan_iter(match="ratelimit:*"))
+            if keys:
+                client.delete(*keys)
+        except Exception:
+            # Redis muammosi tozalashni bloklamasin — in-memory allaqachon tozalandi.
+            pass
 
 
 def _identifier(request: Request) -> str:
@@ -93,17 +108,55 @@ class RateLimiter:
             return
 
         limit = self._limit()
-        key = (_identifier(request), self.scope)
-        now = time.monotonic()
-        window_start = now - self.window_seconds
+        identifier = _identifier(request)
 
-        with _lock:
-            hits = _hits.setdefault(key, [])
-            # Oynadan chiqib ketgan eski urinishlarni tashlab yuboramiz.
-            hits[:] = [ts for ts in hits if ts > window_start]
-            if len(hits) >= limit:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Juda ko'p so'rov. Birozdan keyin qayta urinib ko'ring.",
-                )
-            hits.append(now)
+        # Redis bor bo'lsa — barcha worker'lar orasida umumiy limit. Aks holda
+        # process-ichi in-memory zaxira (bitta worker uchun to'g'ri).
+        if not _redis_allow(self.scope, identifier, limit, self.window_seconds):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Juda ko'p so'rov. Birozdan keyin qayta urinib ko'ring.",
+            )
+        if not _memory_allow(self.scope, identifier, limit, self.window_seconds):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Juda ko'p so'rov. Birozdan keyin qayta urinib ko'ring.",
+            )
+
+
+def _redis_allow(scope: str, identifier: str, limit: int, window: int) -> bool:
+    """Redis fixed-window hisoblagich. Redis yo'q bo'lsa True (zaxiraga o'tadi).
+
+    Kalit oynaga bog'lanadi (`...:<bucket>`); birinchi INCR'da EXPIRE beriladi,
+    oyna tugagach kalit avtomatik o'chadi. Limitdan oshsa False.
+    """
+    client = get_redis()
+    if client is None:
+        return True
+    try:
+        bucket = int(time.time()) // window
+        key = f"ratelimit:{scope}:{identifier}:{bucket}"
+        count = client.incr(key)
+        if count == 1:
+            client.expire(key, window)
+        return count <= limit
+    except Exception:
+        # Redis ishlamay qoldi — limitni bloklamaymiz, in-memory hal qiladi.
+        return True
+
+
+def _memory_allow(scope: str, identifier: str, limit: int, window: int) -> bool:
+    """Process-ichi sliding-window zaxira (Redis yo'q yoki ishlamaganda)."""
+    if get_redis() is not None:
+        # Redis faol — ikkilamchi hisoblash shart emas.
+        return True
+    key = (identifier, scope)
+    now = time.monotonic()
+    window_start = now - window
+    with _lock:
+        hits = _hits.setdefault(key, [])
+        hits[:] = [ts for ts in hits if ts > window_start]
+        if len(hits) >= limit:
+            return False
+        hits.append(now)
+        return True
