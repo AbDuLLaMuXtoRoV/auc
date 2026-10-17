@@ -74,12 +74,17 @@ def place_bid(self, auction_id: int, bidder: User, payload: BidCreate) -> Bid:
 ## 3. Min qadam
 
 ```
-minimum_next_bid = current_price + minimum_bid_increment
+step = max(minimum_bid_increment, tier_step(current_price))   # TIERED_BID_INCREMENT_ENABLED
+minimum_next_bid = current_price + step
 ```
-`amount < minimum_next_bid` → 400. (Hozirgi kod shunday, `bid_service.py:79-84`.)
+`amount < minimum_next_bid` → 400 (`BidService._min_step`, jadval: `services/bid_increment.py`).
+Test muhitida jadval o'chiq — faqat sotuvchi qadami.
 
-Kelajakda: qadam narxga bog'liq bo'lishi mumkin (masalan 1M so'mgacha 10k, undan yuqori 50k) —
-`step_for(current_price)` funksiyasi orqali. Hozir statik.
+`AuctionRead.minimum_next_bid` — aynan shu qiymat API javobida (computed). Frontend qadam
+jadvalini TAKRORLAMAYDI, shu maydonni ko'rsatadi.
+
+Bid tarixi: `GET /auctions/{id}/bids` — ochiq, ism maskalangan (`bidder_display`),
+`max_amount`/`high_bidder_max` sxemada yo'q.
 
 ## 4. Proxy bidding (max-bid) — YO'Q, qilinadi
 

@@ -31,9 +31,14 @@ FastAPI · SQLAlchemy 2.0 (Mapped/mapped_column) · Alembic · PostgreSQL 16 · 
 pydantic-settings · PyJWT · bcrypt · pytest · ruff · uvicorn · Docker Compose (db + redis + minio) ·
 GitHub Actions CI (ruff check + ruff format --check + pytest).
 
-**Ko'tarilgan, lekin kod hali ULANMAGAN:** Redis (compose'da bor — ZSET taymer/kesh/pub-sub uchun),
-MinIO (S3-mos; hozir fayllar `uploads/` ga lokal yoziladi).
-**Yo'q (hali):** background worker (Celery/ARQ/APScheduler — **tanlov ochiq**), rate limiting.
+**Redis (ULANGAN):** token blacklist (`core/token_store.py`), rate limiting
+(`core/rate_limit.py` — Redis fixed-window, zaxira: in-memory), Celery broker/backend.
+Hammasida **graceful fallback** — Redis yo'q bo'lsa ilova yiqilmaydi (`core/redis_client.py`).
+**Celery (ULANGAN):** `core/celery_app.py` + `app/tasks/` — beat (auksion yopish, auto-complete)
+va queue (push, email). Worker: `celery -A app.core.celery_app worker`; beat: `... beat`
+(compose'da `worker` + `beat` servislari). `CELERY_TASK_ALWAYS_EAGER`/test'da inline bajariladi.
+In-process pollerlar (lifespan) hamon bor, lekin default o'chiq — prod'da beat ishlatiladi.
+**MinIO:** S3-mos; hozir fayllar `uploads/` ga lokal yoziladi.
 
 ## Struktura (REAL)
 
@@ -54,6 +59,58 @@ tests/                 # 36 test, hammasi o'tadi
 
 Qatlam yo'nalishi: **api → services → repositories → models**. Teskari import TAQIQ.
 Biznes mantiq endpoint ichida yozilmaydi — service'ga.
+
+## Frontend (Web) — texnologiyalar
+
+Frontend `frontend/` papkasida, backend'dan alohida Node loyihasi.
+
+Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 (CSS-first, `@theme` — `tailwind.config.js` YO'Q) ·
+shadcn/ui (radix base, `components.json`) · **lucide-react** (yagona ikonka manbasi) ·
+`next/font/google` (Inter — matn, Space Grotesk — sarlavha, Geist Mono — raqam/kod).
+
+```
+frontend/
+  app/
+    layout.tsx         # root layout, shrift o'zgaruvchilari, <html lang="uz">
+    page.tsx           # vaqtinchalik skelet (haqiqiy sahifa EMAS)
+    globals.css        # dizayn tokenlari — YAGONA manba (rang/o'lcham/motion)
+  components/ui/        # shadcn/ui primitivlari (button, input, card, badge, label)
+  lib/utils.ts          # cn() — clsx + tailwind-merge
+  components.json       # shadcn konfiguratsiyasi (aliases, baseColor=neutral)
+```
+
+**Komandalar** (`frontend/` ichida): `npm run dev` · `npm run build` · `npm run lint` ·
+yangi komponent: `npx shadcn@latest add <nom>`.
+
+## Frontend — MAJBURIY dizayn qoidalari
+
+Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'da rad javob.
+
+1. **Emoji TAQIQ** — na UI matnida, na tugmalarda, na bo'sh holatlarda, na kod kommentlarida.
+   Ikonka kerak bo'lsa — faqat `lucide-react`.
+2. **"AI-generated" ko'rinishli shablonlar TAQIQ:**
+   - krem fon + serif sarlavha + terrakota aksent kombinatsiyasi;
+   - qora fon + bitta neon-yashil/qizil aksent;
+   - gradient matnlar, gradient tugmalar, glassmorphism, keraksiz blur;
+   - har bo'limda `01/02/03` raqamli markerlar;
+   - "Lorem ipsum" — barcha kontent real mahsulot nomlari, narxlar va tavsiflar bilan yoziladi.
+3. **Rang tizimi:** neytral asos (iliq oq fon `#F7F6F4`, to'q matn `#1B1A18`) + **bitta** brend
+   aksenti — **majolika ko'ki `#12659E`** (`--brand`/`--primary`; sovuq ko'k tovar fotolari bilan
+   raqobatlashmaydi) + semantik ranglar (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`).
+   Hammasi `app/globals.css` da CSS token sifatida e'lon qilinadi (batafsil: `docs/DESIGN.md`).
+   **Komponentlarda hardcode rang TAQIQ** — faqat token orqali (`bg-primary`, `text-muted-foreground`,
+   `text-success` …). warning'ga oq matn qo'yilmaydi — quyuq matn (`--warning-foreground`).
+4. **Tipografika — ikki rol:** sarlavha uchun `font-heading` (Space Grotesk), matn uchun `font-sans`
+   (Inter). Type scale FAQAT: **12 / 14 / 16 / 18 / 24 / 32 / 48px** (`text-xs`…`text-3xl`).
+   Spacing 4px asosida (Tailwind step = `0.25rem`). Ixtiyoriy o'lcham TAQIQ.
+5. **Har komponent 4 holatga ega:** `hover`, `focus-visible`, `disabled`, `loading`.
+   Klaviatura fokusi **ko'rinadigan** bo'lishi shart (`:focus-visible` global ring belgilangan) —
+   `outline: none` ni fokus almashtiruvisiz o'chirish TAQIQ.
+6. **Motion:** faqat **150–250ms** funksional o'tishlar (hover, dropdown, modal) —
+   `--duration-fast/base/slow`. Dekorativ scroll-animatsiya va parallax TAQIQ.
+   `prefers-reduced-motion` hurmat qilinadi (globals.css da reset bor).
+7. **Responsive:** 360px–1440px. Mobil versiya keyin moslashtiriladigan qo'shimcha EMAS —
+   teng huquqli maqsad. Har layout mobil (360px) da ham sinaladi.
 
 ## Kritik biznes qoidalari
 
@@ -127,8 +184,10 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 
 | Fayl | Nima haqida |
 |---|---|
+| `docs/PROJECT_OVERVIEW.md` | Loyihaning to'liq tavsifi: barcha funksiyalar, bajarilgan ishlar, raqamlar |
 | `docs/ARCHITECTURE.md` | Tizim arxitekturasi, qatlamlar, oqimlar, nega monolith |
 | `docs/DOMAIN.md` | Real jadvallar, ustunlar, enum'lar, maqsadli o'zgarishlar |
 | `docs/AUCTION_ENGINE.md` | Atomik bid, proxy bidding, anti-sniping, closer worker, state machine |
 | `docs/PAYMENTS.md` | Escrow, PSP adapter, idempotentlik, webhook imzo, audit log, huquq |
 | `docs/ROADMAP.md` | Fazalar A→D va keyingilari, bajarilganlar belgilangan |
+| `docs/DESIGN.md` | Frontend dizayn tizimi: palitra (hex+kontrast), shrift, layout, imzo element |

@@ -34,7 +34,8 @@ tug'diradi va UZS'da kasr amalda ishlatilmaydi. Butun tiyin — bir ma'noli.
 | full_name / phone / bio / avatar_url / location | String | nullable |
 | seller_rating | Numeric(3,2) | default 0 — pul emas |
 | seller_rating_count | int | default 0 |
-| hashed_password | String(255) | bcrypt |
+| hashed_password | String(255) | bcrypt (Google orqali yaratilganda — tasodifiy, noma'lum parol hash'i) |
+| google_sub | String(255) | nullable, unique, index — Google ID token `sub` |
 | is_active / is_verified | bool | default true / false |
 | role | enum `user_role` | `user` \| `seller` \| `admin`, index |
 | created_at / updated_at | datetime | |
