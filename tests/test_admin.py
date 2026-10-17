@@ -23,11 +23,19 @@ def _register_and_login(client: TestClient, email: str) -> str:
     return login_response.json()["access_token"]
 
 
-def _make_admin(db_session: Session, email: str) -> None:
+def _set_role(db_session: Session, email: str, role: UserRole) -> None:
     user_repository = UserRepository(db_session)
     user = user_repository.get_by_email(email)
     assert user is not None
-    user_repository.set_role(user, UserRole.ADMIN)
+    user_repository.set_role(user, role)
+
+
+def _make_admin(db_session: Session, email: str) -> None:
+    _set_role(db_session, email, UserRole.ADMIN)
+
+
+def _make_superadmin(db_session: Session, email: str) -> None:
+    _set_role(db_session, email, UserRole.SUPERADMIN)
 
 
 def _create_item(client: TestClient, seller_token: str, title: str = "Bench vise") -> dict:
@@ -91,9 +99,19 @@ def test_admin_endpoints_and_permissions(client: TestClient, db_session: Session
     assert unblock_response.status_code == 200
     assert unblock_response.json()["is_active"] is True
 
-    role_response = client.patch(
+    # Rol berish faqat superadminga ochiq — oddiy admin 403 oladi.
+    admin_role_response = client.patch(
         f"/api/v1/admin/users/{seller_user['id']}/role",
         headers={"Authorization": f"Bearer {admin_token}"},
+        json={"role": "seller"},
+    )
+    assert admin_role_response.status_code == 403
+
+    superadmin_token = _register_and_login(client, "root@example.com")
+    _make_superadmin(db_session, "root@example.com")
+    role_response = client.patch(
+        f"/api/v1/admin/users/{seller_user['id']}/role",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
         json={"role": "seller"},
     )
     assert role_response.status_code == 200
@@ -151,6 +169,51 @@ def test_admin_endpoints_and_permissions(client: TestClient, db_session: Session
     )
     assert cancel_response.status_code == 200
     assert cancel_response.json()["status"] == "cancelled"
+
+
+def test_superadmin_privileges_and_protections(client: TestClient, db_session: Session) -> None:
+    admin_token = _register_and_login(client, "admin@example.com")
+    _register_and_login(client, "admin2@example.com")
+    superadmin_token = _register_and_login(client, "root@example.com")
+    _register_and_login(client, "victim@example.com")
+    _make_admin(db_session, "admin@example.com")
+    _make_admin(db_session, "admin2@example.com")
+    _make_superadmin(db_session, "root@example.com")
+
+    def user_id(email: str) -> int:
+        user = UserRepository(db_session).get_by_email(email)
+        assert user is not None
+        return user.id
+
+    # Superadmin admin foydalanuvchini oddiy userga tushira oladi.
+    demote = client.patch(
+        f"/api/v1/admin/users/{user_id('victim@example.com')}/role",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+        json={"role": "user"},
+    )
+    assert demote.status_code == 200
+    assert demote.json()["role"] == "user"
+
+    # Oddiy admin boshqa adminni bloklay olmaydi — faqat superadmin.
+    admin_blocks_admin = client.post(
+        f"/api/v1/admin/users/{user_id('admin2@example.com')}/block",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert admin_blocks_admin.status_code == 403
+
+    superadmin_blocks_admin = client.post(
+        f"/api/v1/admin/users/{user_id('admin2@example.com')}/block",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert superadmin_blocks_admin.status_code == 200
+    assert superadmin_blocks_admin.json()["is_active"] is False
+
+    # Superadminni hech kim (hatto boshqa superadmin ham) bloklay olmaydi.
+    block_superadmin = client.post(
+        f"/api/v1/admin/users/{user_id('root@example.com')}/block",
+        headers={"Authorization": f"Bearer {superadmin_token}"},
+    )
+    assert block_superadmin.status_code == 403
 
 
 def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Session) -> None:

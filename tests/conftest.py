@@ -22,6 +22,11 @@ from app.repositories.user_repository import UserRepository
 # Muhit-bog'liq xatti-harakatni sinovchi testlar (masalan prod bloklari)
 # o'z Settings nusxasini yoki monkeypatch ishlatadi.
 settings.environment = "test"
+# Dinamik (darajali) minimal qadam poli test muhitida o'chiriladi: mavjud
+# test korpusi kichik tiyin summalar ishlatadi (real narxlar emas). Jadval
+# mantig'i alohida test_tiered_increment.py da (pure-function + floor yoqilgan
+# integratsiya testi) tekshiriladi.
+settings.tiered_bid_increment_enabled = False
 
 # REAL Postgres — SQLite EMAS.
 #
@@ -203,6 +208,7 @@ def create_item(
         "title": title,
         "condition": "used",
         "starting_price": starting_price,
+        "defects": "yo'q",
     }
     if category_id is not None:
         payload["category_id"] = category_id
