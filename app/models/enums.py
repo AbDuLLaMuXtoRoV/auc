@@ -28,12 +28,28 @@ class BidStatus(StrEnum):
     VALID = "valid"
     OUTBID = "outbid"
     CANCELLED = "cancelled"
+    # Foydalanuvchi qaytarib oldi (typo/xato stavka). Audit logda qoladi.
+    RETRACTED = "retracted"
+    # Admin bekor qildi (shill/firibgarlik). Joriy narx qayta hisoblanadi.
+    INVALIDATED = "invalidated"
 
 
 class UserRole(StrEnum):
     USER = "user"
     SELLER = "seller"
     ADMIN = "admin"
+    SUPERADMIN = "superadmin"  # to'liq huquq: rol berish, adminlarni boshqarish
+
+
+# Moderatsiya huquqiga ega rollar. Superadmin — adminning USTKI to'plami:
+# admin ruxsat etilgan hamma joyda superadmin ham o'tishi shart. Tekshiruvni
+# `role == UserRole.ADMIN` deb yozish superadminni jimgina chetlab o'tadi.
+ADMIN_ROLES: frozenset[UserRole] = frozenset({UserRole.ADMIN, UserRole.SUPERADMIN})
+
+
+def is_admin(role: UserRole) -> bool:
+    """Rol admin yoki superadminmi — moderatsiya tekshiruvlari uchun yagona manba."""
+    return role in ADMIN_ROLES
 
 
 class HandoverMethod(StrEnum):
@@ -54,6 +70,8 @@ class NotificationType(StrEnum):
     PAYMENT = "payment"  # to'lov holati
     HANDOVER = "handover"  # topshirish
     DISPUTE = "dispute"
+    SECOND_CHANCE = "second_chance"  # rezervga yetmadi — sotuvchiga taklif
+    ENDING_SOON = "ending_soon"  # auksion tugashiga oz qoldi
 
 
 class DisputeReason(StrEnum):
@@ -89,3 +107,37 @@ class OrderStatus(StrEnum):
     PICKUP_PENDING = "pickup_pending"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+
+
+class ComplaintTargetType(StrEnum):
+    ITEM = "item"
+    USER = "user"
+    AUCTION = "auction"
+    MESSAGE = "message"
+    ORDER = "order"
+
+
+class ComplaintStatus(StrEnum):
+    OPEN = "open"
+    REVIEWING = "reviewing"
+    RESOLVED = "resolved"
+    REJECTED = "rejected"
+
+
+class ConsentDocumentType(StrEnum):
+    """Foydalanuvchi qabul qilishi mumkin bo'lgan huquqiy hujjatlar.
+
+    Nizo chiqqanda "qaysi versiyadagi shartnoma qabul qilingan" savoliga
+    javob berish uchun har qabul versiyasi bilan saqlanadi.
+    """
+
+    TERMS = "terms"  # foydalanuvchi kelishuvi
+    PRIVACY = "privacy"  # maxfiylik siyosati
+    AUCTION_RULES = "auction_rules"  # auksion reglamenti
+    PUBLIC_OFFER = "public_offer"  # ommaviy oferta (stavka = ofertani qabul)
+
+
+class OtpPurpose(StrEnum):
+    PHONE_VERIFY = "phone_verify"  # telefon raqamni tasdiqlash
+    LOGIN = "login"  # OTP orqali kirish
+    PASSWORD_RESET = "password_reset"  # parolni tiklash

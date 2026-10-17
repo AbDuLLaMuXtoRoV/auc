@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, SmallInteger
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,6 +11,10 @@ from app.money import TIYIN_PER_SOUM, Tiyin
 
 class Auction(Base):
     __tablename__ = "auctions"
+
+    # Sweeper (close_due_auctions) `status == ACTIVE AND end_time <= now`
+    # bo'yicha qidiradi — kompozit index shu so'rovni tez qiladi.
+    __table_args__ = (Index("ix_auctions_status_end_time", "status", "end_time"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), unique=True, nullable=False)
@@ -48,6 +52,29 @@ class Auction(Base):
     winning_bid_id: Mapped[int | None] = mapped_column(
         ForeignKey("bids.id", name="fk_auctions_winning_bid_id_bids", use_alter=True),
         nullable=True,
+    )
+    # Anti-sniping end_time'ni surganda ORIGINAL muddat shu yerda saqlanadi —
+    # "qancha cho'zildi" auditi va ko'rsatish uchun. Auksion aktivlashganda/
+    # yaratilganda o'rnatiladi.
+    original_end_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Auksion amalda yopilgan (g'olib aniqlangan) vaqt.
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Denormalizatsiya — har bidda qulf ostida yangilanadi. Ro'yxat/karta
+    # ko'rsatishda har safar COUNT(*) qilmaslik uchun.
+    bid_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    unique_bidder_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # "Hoziroq sotib olish" narxi (tiyin). None = buy-now o'chiq.
+    buy_now_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    # Second-chance offer: reserve bajarilmaganda sotuvchiga eng yuqori
+    # bidderga sotish taklifi beriladi. offered_at = taklif berilgan vaqt,
+    # expires_at = taklif amal qilish muddati (24 soat).
+    second_chance_offered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    second_chance_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

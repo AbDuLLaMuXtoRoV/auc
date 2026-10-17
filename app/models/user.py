@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from sqlalchemy import DateTime, Numeric, String
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy import Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -24,6 +24,22 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+    # Telefon tasdiqlash (OTP) — tasdiqlangan vaqt (None = tasdiqlanmagan).
+    phone_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Google akkaunt identifikatori (ID token `sub`). Email o'zgarsa ham
+    # barqaror — qayta kirishda bog'lash email emas, shu orqali qilinadi.
+    google_sub: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
+    # Telegram bildirishnoma kanali (bot bilan bog'langanda to'ldiriladi).
+    telegram_chat_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Interfeys tili (uz/ru) — B2B segmenti uchun rus tili zarur.
+    preferred_language: Mapped[str] = mapped_column(String(5), default="uz", nullable=False)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Soft delete — akkaunt o'chirilgan vaqt (None = faol).
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     role: Mapped[UserRole] = mapped_column(
         SqlEnum(UserRole, name="user_role"),
         default=UserRole.USER,

@@ -30,6 +30,18 @@ class Item(Base):
     images: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     location: Mapped[str | None] = mapped_column(String(160), nullable=True)
     item_location: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    # Domen boyitish: ishlab chiqarish yili, komplektatsiya, nuqsonlar, video.
+    year: Mapped[int | None] = mapped_column(nullable=True)
+    equipment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    defects: Mapped[str | None] = mapped_column(Text, nullable=True)
+    video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Hudud/tuman — jadvallar app/models/region.py da (boshqa agent).
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), index=True)
+    district_id: Mapped[int | None] = mapped_column(ForeignKey("districts.id"), index=True)
+    view_count: Mapped[int] = mapped_column(default=0, nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    # Normallashtirilgan qidiruv matni (lotin kanon). ILIKE bo'yicha qidiriladi.
+    search_text: Mapped[str | None] = mapped_column(Text, index=True, nullable=True)
     # Pul — tiyinda (BIGINT). Batafsil: app/money/
     starting_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     reserve_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
