@@ -1,0 +1,213 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Bazart dizayn tokenlari — YAGONA manba.
+   Komponentlarda hardcode rang/o'lcham TAQIQ. Faqat shu tokenlardan foydalan.
+   Rang tizimi: neytral asos + BITTA brend aksenti + semantik ranglar.
+   ========================================================================== */
+
+@theme inline {
+  /* Shriftlar: ikki rol — sarlavha (heading) va matn (sans). */
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+
+  /* Type scale: 12 / 14 / 16 / 18 / 24 / 32 / 48px (faqat shular). */
+  --text-xs: 0.75rem; /* 12 */
+  --text-xs--line-height: 1rem; /* 16 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-sm--line-height: 1.25rem; /* 20 */
+  --text-base: 1rem; /* 16 */
+  --text-base--line-height: 1.5rem; /* 24 */
+  --text-lg: 1.125rem; /* 18 */
+  --text-lg--line-height: 1.75rem; /* 28 */
+  --text-xl: 1.5rem; /* 24 */
+  --text-xl--line-height: 2rem; /* 32 */
+  --text-2xl: 2rem; /* 32 */
+  --text-2xl--line-height: 2.5rem; /* 40 */
+  --text-3xl: 3rem; /* 48 */
+  --text-3xl--line-height: 3.25rem; /* 52 */
+
+  /* Spacing scale: 4px asosida (Tailwind step = 0.25rem). */
+  --spacing: 0.25rem;
+
+  /* Motion: faqat 150–250ms funksional o'tishlar. */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --default-transition-duration: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Neytral asos + sirt ranglari. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Brend aksenti (primary = brend). */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+
+  /* Ikkilamchi/urg'u yuzalari (neytral). */
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Semantik ranglar: success / warning / error. */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-destructive: var(--error); /* shadcn komponentlari uchun alias */
+  --color-destructive-foreground: var(--error-foreground);
+
+  /* Grafiklar (brend + semantikadan olingan). */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* --- Yorug' rejim (default) ---------------------------------------------
+   Barcha qiymatlar WCAG AA bo'yicha tekshirilgan (docs/DESIGN.md).
+   -------------------------------------------------------------------------- */
+:root {
+  --radius: 0.625rem;
+
+  /* Neytral asos: iliq oq fon, oq sirt, to'q kulrang matn.
+     Fon #F7F6F4 — sof oq emas: oq kartalar va fotolar ustida "suzadi". */
+  --background: #f7f6f4;
+  --foreground: #1b1a18; /* ink · fon ustida 16.1:1 */
+  --card: #ffffff;
+  --card-foreground: #1b1a18;
+  --popover: #ffffff;
+  --popover-foreground: #1b1a18;
+  --muted: #efeeeb;
+  --muted-foreground: #6b6863; /* 2-daraja matn · fon ustida 5.14:1 */
+  --border: #e7e4df;
+  --input: #e7e4df;
+
+  /* Brend aksenti — "majolika ko'ki" (Samarqand/Buxoro koshinlaridan).
+     Sovuq ko'k orqaga chekinadi — iliq tovar fotolari bilan raqobatlashmaydi.
+     Yagona brend rangi (primary sifatida). Oq matn ustida 6.21:1. */
+  --brand: #12659e;
+  --brand-foreground: #ffffff;
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --ring: #12659e;
+
+  /* Neytral ikkilamchi yuzalar. */
+  --secondary: #efeeeb;
+  --secondary-foreground: #1b1a18;
+  --accent: #efeeeb;
+  --accent-foreground: #1b1a18;
+
+  /* Semantik ranglar. warning — amber, DOIM quyuq matn bilan (oq matn emas). */
+  --success: #0e7a46; /* oq matn 5.4:1 */
+  --success-foreground: #ffffff;
+  --warning: #e1900b; /* ink matn 6.79:1 */
+  --warning-foreground: #1b1a18;
+  --error: #c4362c; /* oq matn 5.37:1 */
+  --error-foreground: #ffffff;
+
+  --chart-1: #12659e;
+  --chart-2: #0e7a46;
+  --chart-3: #e1900b;
+  --chart-4: #c4362c;
+  --chart-5: #6b6863;
+}
+
+/* --- Qorong'u rejim ------------------------------------------------------ */
+.dark {
+  --background: #171614;
+  --foreground: #f4f3f0; /* fon ustida 16.3:1 */
+  --card: #1e1d1b;
+  --card-foreground: #f4f3f0;
+  --popover: #1e1d1b;
+  --popover-foreground: #f4f3f0;
+  --muted: #26241f;
+  --muted-foreground: #a8a49d; /* fon ustida 7.29:1 */
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+
+  /* Dark'da ozroq yorqinroq ko'k — to'q sirtda ko'rinishi uchun. Oq matn 5.16:1. */
+  --brand: #1f72ad;
+  --brand-foreground: #ffffff;
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --ring: #1f72ad;
+
+  --secondary: #26241f;
+  --secondary-foreground: #f4f3f0;
+  --accent: #26241f;
+  --accent-foreground: #f4f3f0;
+
+  /* success/error yorug' rejim qiymatini saqlaydi — ular dark fonda ham AA. */
+  --success: #0e7a46;
+  --success-foreground: #ffffff;
+  --warning: #f0a420; /* dark'da yorqinroq amber · ink matn 8.64:1 */
+  --warning-foreground: #171614;
+  --error: #c4362c;
+  --error-foreground: #ffffff;
+
+  --chart-1: #1f72ad;
+  --chart-2: #16a45c;
+  --chart-3: #f0a420;
+  --chart-4: #d64a3d;
+  --chart-5: #a8a49d;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  /* Sarlavhalar xarakterli shriftda. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+  /* Klaviatura fokusi HAR DOIM ko'rinadigan bo'lishi shart. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* prefers-reduced-motion hurmat qilinadi: dekorativ harakat o'chiriladi. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

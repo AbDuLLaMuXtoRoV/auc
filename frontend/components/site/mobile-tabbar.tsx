@@ -1,0 +1,75 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import {
+  HouseIcon,
+  LayoutGridIcon,
+  PlusIcon,
+  PackageIcon,
+  LogInIcon,
+  HeartIcon,
+  type LucideIcon,
+} from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/lib/store/auth"
+
+type Tab = { href: string; label: string; icon: LucideIcon; match: string }
+
+const ANON: Tab[] = [
+  { href: "/", label: "Bosh sahifa", icon: HouseIcon, match: "/" },
+  { href: "/catalog/hammasi", label: "Katalog", icon: LayoutGridIcon, match: "/catalog" },
+  { href: "/login", label: "Kirish", icon: LogInIcon, match: "/login" },
+]
+
+const AUTHED: Tab[] = [
+  { href: "/", label: "Bosh sahifa", icon: HouseIcon, match: "/" },
+  { href: "/catalog/hammasi", label: "Katalog", icon: LayoutGridIcon, match: "/catalog" },
+  { href: "/sell", label: "Sotish", icon: PlusIcon, match: "/sell" },
+  { href: "/my/watchlist", label: "Kuzatuvlar", icon: HeartIcon, match: "/my/watchlist" },
+  { href: "/orders", label: "Buyurtmalar", icon: PackageIcon, match: "/orders" },
+]
+
+function MobileTabBar() {
+  const pathname = usePathname()
+  const authed = useAuthStore((s) => s.status) === "authenticated"
+  const tabs = authed ? AUTHED : ANON
+
+  return (
+    <nav
+      aria-label="Asosiy navigatsiya"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background md:hidden"
+    >
+      <ul
+        className={cn(
+          "mx-auto grid max-w-md",
+          tabs.length === 5 ? "grid-cols-5" : tabs.length === 4 ? "grid-cols-4" : "grid-cols-3"
+        )}
+      >
+        {tabs.map((tab) => {
+          const active =
+            tab.match === "/" ? pathname === "/" : pathname.startsWith(tab.match)
+          const Icon = tab.icon
+          return (
+            <li key={tab.href}>
+              <Link
+                href={tab.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 px-1 py-2 text-center text-xs outline-none transition-colors focus-visible:bg-muted",
+                  active ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <Icon className="size-5" aria-hidden="true" />
+                {tab.label}
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
+}
+
+export { MobileTabBar }

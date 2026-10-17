@@ -1,0 +1,142 @@
+/**
+ * Bildirishnoma, nizo va sharh (engagement) endpointlari.
+ *
+ * Turlar backend sxemalariga (app/schemas/notification.py, dispute.py,
+ * review.py) 1:1 mos keladi. Maydon nomlari AYNAN backend'dagidek —
+ * dispute'da `description` (comment emas), review'da `stars`/`text`
+ * (rating/comment emas).
+ */
+
+import { apiFetch } from "@/lib/api/client";
+
+// --- Bildirishnomalar --------------------------------------------------
+
+/** NotificationType (app/models/enums.py). */
+export type NotificationType =
+  | "outbid"
+  | "won"
+  | "sold"
+  | "payment"
+  | "handover"
+  | "dispute"
+  /** Rezervga yetmadi — sotuvchiga "eng yuqori taklifga sotish" taklifi. payload: auction_id, expires_at. */
+  | "second_chance"
+  /** Kuzatilayotgan auksion tugashiga oz qoldi. */
+  | "ending_soon";
+
+/** NotificationRead sxemasi. */
+export interface Notification {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  /** Ixtiyoriy kontekst (masalan auction_id/order_id) — turi erkin. */
+  payload: Record<string, unknown> | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
+interface UnreadCount {
+  count: number;
+}
+
+/** Joriy foydalanuvchi bildirishnomalari (yangi -> eski, backend tartibi). */
+export function listNotifications(onlyUnread = false): Promise<Notification[]> {
+  const q = onlyUnread ? "?only_unread=true" : "";
+  return apiFetch<Notification[]>(`/notifications${q}`);
+}
+
+/** O'qilmagan bildirishnomalar soni (qo'ng'iroq nishoni uchun). */
+export function unreadNotificationsCount(): Promise<number> {
+  return apiFetch<UnreadCount>("/notifications/unread-count").then((r) => r.count);
+}
+
+/** Bitta bildirishnomani o'qilgan deb belgilash. */
+export function markNotificationRead(id: number): Promise<Notification> {
+  return apiFetch<Notification>(`/notifications/${id}/read`, { method: "POST" });
+}
+
+/** Hammasini o'qilgan deb belgilash. Qaytadi: o'zgargan (o'qilgan) soni. */
+export function markAllNotificationsRead(): Promise<number> {
+  return apiFetch<UnreadCount>("/notifications/read-all", { method: "POST" }).then(
+    (r) => r.count
+  );
+}
+
+// --- Nizolar (disputes) ------------------------------------------------
+
+/** DisputeReason (app/models/enums.py). */
+export type DisputeReason =
+  | "not_received"
+  | "not_as_described"
+  | "damaged"
+  | "fake"
+  | "other";
+
+/** DisputeStatus (app/models/enums.py). */
+export type DisputeStatus =
+  | "open"
+  | "under_review"
+  | "resolved_buyer"
+  | "resolved_seller";
+
+/** DisputeRead sxemasi. */
+export interface Dispute {
+  id: number;
+  order_id: number;
+  reason: DisputeReason;
+  status: DisputeStatus;
+  description: string | null;
+  resolution: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+/** DisputeCreate — payment serverda order bo'yicha topiladi (klientdan olinmaydi). */
+export interface DisputeCreateInput {
+  order_id: number;
+  reason: DisputeReason;
+  description?: string;
+}
+
+/** Order ustidan nizo ochish. */
+export function createDispute(input: DisputeCreateInput): Promise<Dispute> {
+  return apiFetch<Dispute>("/disputes", { method: "POST", body: input });
+}
+
+/** Menikilar (admin uchun ?status=open backend'da alohida boshqariladi). */
+export function listMyDisputes(): Promise<Dispute[]> {
+  return apiFetch<Dispute[]>("/disputes");
+}
+
+// --- Sharhlar (reviews) ------------------------------------------------
+
+/** ReviewRead sxemasi. `to_id` — orderning ikkinchi tomoni (serverda aniqlanadi). */
+export interface Review {
+  id: number;
+  order_id: number;
+  from_id: number;
+  to_id: number;
+  stars: number;
+  text: string | null;
+  created_at: string;
+}
+
+/** ReviewCreate — `to_id` klientdan olinmaydi. */
+export interface ReviewCreateInput {
+  order_id: number;
+  /** 1..5; chegaradan tashqari -> 422. */
+  stars: number;
+  text?: string;
+}
+
+/** Sharh yaratish (order COMPLETED bo'lgach). */
+export function createReview(input: ReviewCreateInput): Promise<Review> {
+  return apiFetch<Review>("/reviews", { method: "POST", body: input });
+}
+
+/** Foydalanuvchi haqidagi sharhlar (ochiq — auth shart emas). */
+export function listUserReviews(userId: number): Promise<Review[]> {
+  return apiFetch<Review[]>(`/reviews/user/${userId}`, { auth: false });
+}
