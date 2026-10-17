@@ -4,7 +4,13 @@ from datetime import UTC, datetime
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.enums import HandoverMethod, HandoverStatus, OrderStatus, PaymentStatus, UserRole
+from app.models.enums import (
+    HandoverMethod,
+    HandoverStatus,
+    OrderStatus,
+    PaymentStatus,
+    is_admin,
+)
 from app.models.handover import Handover
 from app.models.user import User
 from app.repositories.handover_repository import HandoverRepository
@@ -135,11 +141,11 @@ class HandoverService:
         order = self.orders.get(order_id)
         if order is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-        if user.role != UserRole.ADMIN and user.id not in {order.buyer_id, order.seller_id}:
+        if not is_admin(user.role) and user.id not in {order.buyer_id, order.seller_id}:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your order")
         return handover
 
     @staticmethod
     def is_code_visible(handover: Handover, user: User) -> bool:
         """Kod faqat sotuvchi va adminga ko'rinadi."""
-        return user.role == UserRole.ADMIN or user.id == handover.order.seller_id
+        return is_admin(user.role) or user.id == handover.order.seller_id

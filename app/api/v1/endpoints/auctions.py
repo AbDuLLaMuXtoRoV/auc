@@ -9,6 +9,7 @@ from app.models.auction import Auction
 from app.models.bid import Bid
 from app.models.enums import AuctionStatus
 from app.repositories.auction_repository import AuctionRepository
+from app.repositories.bid_repository import BidRepository
 from app.repositories.item_repository import ItemRepository
 from app.schemas.auction import AuctionCreate, AuctionRead, AuctionStatusUpdate
 from app.schemas.bid import BidCreate, BidRead
@@ -84,6 +85,25 @@ def close_auction(
     return AuctionService(db).close_auction(auction_id)
 
 
+@router.post("/{auction_id}/second-chance/accept", response_model=AuctionRead)
+def accept_second_chance(
+    auction_id: int,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> Auction:
+    """Sotuvchi second-chance taklifni qabul qiladi — eng yuqori bidderga sotadi."""
+    return AuctionService(db).accept_second_chance(auction_id, current_user)
+
+
+@router.get("/{auction_id}/bids", response_model=list[BidRead])
+def read_auction_bids(auction_id: int, db: DbSession, limit: LimitQuery = 50) -> list[Bid]:
+    """Ochiq bid tarixi. Ism maskalangan (BidRead.bidder_display), proxy max
+    (`max_amount`/`high_bidder_max`) sxemada YO'Q — oshkor bo'lmaydi."""
+    if AuctionRepository(db).get(auction_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found")
+    return BidRepository(db).list_for_auction(auction_id, limit=limit)
+
+
 @router.post(
     "/{auction_id}/bids",
     response_model=BidRead,
@@ -97,6 +117,14 @@ def create_bid(
     db: DbSession,
     request: Request,
 ) -> Bid:
+    ua = request.headers.get("user-agent")
+    idem = request.headers.get("idempotency-key")
     return BidService(db).place_bid(
-        auction_id, current_user, payload, ip=client_ip(request), device_id=device_id(request)
+        auction_id,
+        current_user,
+        payload,
+        ip=client_ip(request),
+        device_id=device_id(request),
+        user_agent=ua[:512] if ua else None,
+        idempotency_key=idem[:128] if idem else None,
     )

@@ -1,3 +1,5 @@
+import secrets
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,6 +16,42 @@ class UserRepository:
     def get_by_email(self, email: str) -> User | None:
         statement = select(User).where(User.email == email)
         return self.db.scalar(statement)
+
+    def get_by_google_sub(self, google_sub: str) -> User | None:
+        return self.db.scalar(select(User).where(User.google_sub == google_sub))
+
+    def create_from_google(
+        self,
+        *,
+        email: str,
+        google_sub: str,
+        full_name: str | None,
+        avatar_url: str | None,
+    ) -> User:
+        # Parol ustuni NOT NULL — hech kim bilmaydigan tasodifiy qiymat hash'i
+        # yoziladi. Parol bilan kirish kerak bo'lsa "parolni tiklash" orqali.
+        user = User(
+            email=email,
+            google_sub=google_sub,
+            full_name=full_name,
+            avatar_url=avatar_url,
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+            is_verified=True,
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def link_google(self, user: User, *, google_sub: str, reset_password: bool) -> User:
+        user.google_sub = google_sub
+        user.is_verified = True
+        if reset_password:
+            user.hashed_password = hash_password(secrets.token_urlsafe(32))
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
 
     def get_by_id(self, user_id: int) -> User | None:
         return self.db.get(User, user_id)
@@ -35,6 +73,9 @@ class UserRepository:
 
     def update(self, user: User, payload: UserUpdate) -> User:
         data = payload.model_dump(exclude_unset=True)
+        # Yangi raqam hali tasdiqlanmagan — eski tasdiq unga o'tib ketmasin.
+        if "phone" in data and data["phone"] != user.phone:
+            user.phone_verified_at = None
         for field, value in data.items():
             setattr(user, field, value)
         self.db.add(user)

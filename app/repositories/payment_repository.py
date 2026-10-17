@@ -51,6 +51,24 @@ class PaymentRepository:
         statement = select(Payment).where(Payment.idempotency_key == idempotency_key)
         return self.db.scalar(statement)
 
+    def get_for_update_by_provider_payment_id(
+        self, provider: str, provider_payment_id: str
+    ) -> Payment | None:
+        """PSP to'lovini (provider, provider_payment_id) bo'yicha QULFLAB o'qiydi.
+
+        Webhook reconciliation uchun: PSP hodisasi kelганda payment qatorini
+        FOR UPDATE bilan qulflab, sinxron capture/release bilan poyga qilmasin.
+        """
+        statement = (
+            select(Payment)
+            .where(
+                Payment.provider == provider,
+                Payment.provider_payment_id == provider_payment_id,
+            )
+            .with_for_update()
+        )
+        return self.db.scalars(statement).one_or_none()
+
     def get_latest_by_order(self, order_id: int) -> Payment | None:
         statement = (
             select(Payment)

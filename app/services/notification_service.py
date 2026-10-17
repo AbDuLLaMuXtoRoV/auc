@@ -36,7 +36,43 @@ class NotificationService:
             body=body,
             payload=payload,
         )
-        return self.notifications.create(notification)
+        created = self.notifications.create(notification)
+
+        # Push yetkazishni fon vazifasiga topshiramiz (best-effort, so'rovni
+        # bloklamaydi). Broker/worker yo'q bo'lsa enqueue() inline zaxiraga tushadi.
+        # Lazy import — aylanma bog'liqlik va Celery'ni majburiy qilmaslik uchun.
+        from app.tasks.dispatch import enqueue
+        from app.tasks.notifications import deliver_push, deliver_telegram
+
+        enqueue(
+            deliver_push,
+            user_id=user_id,
+            title=title,
+            body=body,
+            data={"type": type.value, **(payload or {})},
+        )
+
+        # Telegram — O'zbekistonda asosiy kanal. Foydalanuvchi bot bilan
+        # bog'langan (telegram_chat_id bor) bo'lsa, o'sha yerga ham yetkazamiz.
+        # Best-effort: yetkazilmasa ham asosiy oqim (bid/to'lov) davom etadi.
+        chat_id = self._telegram_chat_id(user_id)
+        if chat_id:
+            enqueue(
+                deliver_telegram,
+                chat_id=chat_id,
+                text=self._telegram_text(title, body),
+            )
+        return created
+
+    def _telegram_chat_id(self, user_id: int) -> str | None:
+        """Foydalanuvchining Telegram chat_id'sini oladi (bog'lanmagan bo'lsa None)."""
+        user = self.db.get(User, user_id)
+        return user.telegram_chat_id if user else None
+
+    @staticmethod
+    def _telegram_text(title: str, body: str | None) -> str:
+        """Telegram xabar matnini shakllantiradi: sarlavha + (ixtiyoriy) tana."""
+        return f"{title}\n\n{body}" if body else title
 
     def list_mine(self, user: User, only_unread: bool = False) -> list[Notification]:
         return self.notifications.list_for_user(user.id, only_unread=only_unread)

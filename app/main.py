@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
@@ -37,6 +38,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     configure_logging()
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
+    # CORS: frontend (Next.js) brauzerdan /api/v1 ga so'rov yuboradi.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_middleware(RequestIdMiddleware)
     app.include_router(api_router, prefix="/api/v1")
     Path(settings.local_upload_dir).mkdir(parents=True, exist_ok=True)

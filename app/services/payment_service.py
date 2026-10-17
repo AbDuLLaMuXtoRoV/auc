@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.enums import OrderStatus, PaymentStatus, UserRole
+from app.models.enums import OrderStatus, PaymentStatus, is_admin
 from app.models.payment import Payment
 from app.models.user import User
 from app.money import calc_buyer_premium
@@ -14,7 +14,7 @@ from app.repositories.payment_repository import PaymentRepository
 from app.schemas.payment import HoldCreate, PaymentIntentCreate
 from app.services.audit_service import AuditService
 from app.services.payment_providers import PaymentProviderError, get_payment_provider
-from app.services.payment_state import assert_payment_transition
+from app.services.payment_state import ALLOWED_TRANSITIONS, assert_payment_transition
 
 
 class PaymentService:
@@ -73,7 +73,7 @@ class PaymentService:
         payment = self.payments.get(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
-        if actor.id != payment.buyer_id and actor.role != UserRole.ADMIN:
+        if actor.id != payment.buyer_id and not is_admin(actor.role):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
         if payment.provider_payment_id is None:
             raise HTTPException(
@@ -226,7 +226,7 @@ class PaymentService:
         payment = self.payments.get_for_update(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
-        if actor is not None and actor.role != UserRole.ADMIN and actor.id != payment.buyer_id:
+        if actor is not None and not is_admin(actor.role) and actor.id != payment.buyer_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your payment")
         if payment.status == PaymentStatus.RELEASED:
             return payment  # idempotent — ikki marta capture qilinmaydi
@@ -274,7 +274,7 @@ class PaymentService:
         payment = self.payments.get_for_update(payment_id)
         if payment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
-        if actor is not None and actor.role != UserRole.ADMIN:
+        if actor is not None and not is_admin(actor.role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only an admin can release a hold (open a dispute instead)",
@@ -311,11 +311,82 @@ class PaymentService:
         self.db.refresh(payment)
         return payment
 
+    # --- Webhook reconciliation (PSP = haqiqat manbai) --------------------
+
+    def reconcile_from_webhook(
+        self,
+        *,
+        provider: str,
+        provider_payment_id: str,
+        target_status: PaymentStatus,
+        event_id: str,
+    ) -> bool:
+        """PSP webhook hodisasidan payment/order holatini yangilaydi.
+
+        Haqiqat manbai — PSP. Bu metod webhook tranzaksiyasi ICHIDA chaqiriladi
+        va COMMIT QILMAYDI (WebhookService bir marta commit qiladi) — hodisa
+        yozuvi va payment o'zgarishi atomik bo'lishi uchun.
+
+        Idempotent va xavfsiz:
+          - Payment topilmasa (begona/eski id) — jimgina o'tkazib yuboradi.
+          - Allaqachon target holatda bo'lsa — o'zgartirmaydi (takroriy webhook).
+          - Taqiqlangan o'tish bo'lsa (masalan RELEASED ustiga cancel) — HECH
+            NARSA o'zgartirmaydi, anomaliyani audit qiladi (webhook 500 bermaydi,
+            aks holda PSP cheksiz retry qiladi).
+
+        :returns: holat haqiqatan o'zgarganda True.
+        """
+        payment = self.payments.get_for_update_by_provider_payment_id(provider, provider_payment_id)
+        if payment is None:
+            return False  # noma'lum to'lov — yon effektsiz o'tkazib yuboramiz
+        if payment.status == target_status:
+            return False  # allaqachon shu holatda — idempotent no-op
+
+        if target_status not in ALLOWED_TRANSITIONS.get(payment.status, frozenset()):
+            # PSP kutilmagan o'tishni bildirdi — o'zgartirmaymiz, lekin dalil qoldiramiz.
+            AuditService(self.db).record(
+                action="PAYMENT_WEBHOOK_IGNORED",
+                entity_type="payment",
+                entity_id=payment.id,
+                actor_id=None,
+                old_value={"status": payment.status.value},
+                new_value={"status": target_status.value, "event_id": event_id},
+            )
+            return False
+
+        old_status = payment.status
+        payment.status = target_status
+        now = datetime.now(UTC)
+        if target_status == PaymentStatus.HELD:
+            payment.held_at = payment.held_at or now
+        elif target_status == PaymentStatus.RELEASED:
+            payment.released_at = now
+
+        order = self.orders.get(payment.order_id)
+        if order is not None:
+            if target_status == PaymentStatus.HELD and order.status == OrderStatus.PENDING_PAYMENT:
+                order.status = OrderStatus.PICKUP_PENDING
+                order.auto_complete_at = now + timedelta(hours=settings.auto_complete_hours)
+            elif target_status == PaymentStatus.RELEASED:
+                order.status = OrderStatus.COMPLETED
+            elif target_status == PaymentStatus.CANCELLED_HOLD:
+                order.status = OrderStatus.CANCELLED
+
+        AuditService(self.db).record(
+            action=f"PAYMENT_WEBHOOK_{target_status.value.upper()}",
+            entity_type="payment",
+            entity_id=payment.id,
+            actor_id=None,  # PSP webhook — odam aktori yo'q
+            old_value={"status": old_status.value},
+            new_value={"status": target_status.value, "event_id": event_id},
+        )
+        return True
+
     def get_payment_by_order(self, order_id: int, actor: User) -> Payment:
         order = self.orders.get(order_id)
         if order is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-        if actor.role != UserRole.ADMIN and actor.id not in {order.buyer_id, order.seller_id}:
+        if not is_admin(actor.role) and actor.id not in {order.buyer_id, order.seller_id}:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your order")
 
         payment = self.payments.get_latest_by_order(order_id)

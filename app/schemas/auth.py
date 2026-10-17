@@ -1,6 +1,10 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.models.enums import OtpPurpose
 from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import normalize_phone as _normalize_phone
 
 
 class Token(BaseModel):
@@ -16,6 +20,12 @@ class AccessToken(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class GoogleLoginRequest(BaseModel):
+    """Google Identity Services bergan ID token (`credential`)."""
+
+    credential: str = Field(min_length=1, max_length=4096)
 
 
 class LogoutRequest(BaseModel):
@@ -56,11 +66,57 @@ class VerifyEmailRequest(BaseModel):
     token: str
 
 
+class OtpRequestIn(BaseModel):
+    """OTP kod so'rash: telefon raqam + maqsad."""
+
+    phone: str = Field(max_length=40)
+    purpose: OtpPurpose = OtpPurpose.PHONE_VERIFY
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        return _normalize_phone(value)
+
+
+class OtpVerifyIn(BaseModel):
+    """OTP kod tekshirish: telefon raqam + kod + maqsad."""
+
+    phone: str = Field(max_length=40)
+    code: str = Field(min_length=4, max_length=12)
+    purpose: OtpPurpose = OtpPurpose.PHONE_VERIFY
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        return _normalize_phone(value)
+
+
+class OtpRequestResponse(MessageResponse):
+    """OTP so'rash javobi. `debug_code` FAQAT non-prod muhitda to'ldiriladi.
+
+    Prod'da kod hech qachon javobda qaytmaydi (aks holda SMS'siz ham kodni
+    olib bo'lardi) — u faqat SMS orqali yetkaziladi.
+    """
+
+    expires_at: datetime
+    debug_code: str | None = None
+
+
+class OtpVerifyResponse(MessageResponse):
+    verified: bool
+    phone_verified: bool = False
+
+
 __all__ = [
     "AccessToken",
     "ForgotPasswordRequest",
+    "GoogleLoginRequest",
     "LogoutRequest",
     "MessageResponse",
+    "OtpRequestIn",
+    "OtpRequestResponse",
+    "OtpVerifyIn",
+    "OtpVerifyResponse",
     "PasswordResetTokenResponse",
     "RefreshTokenRequest",
     "ResetPasswordRequest",

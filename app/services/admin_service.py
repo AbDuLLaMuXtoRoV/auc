@@ -35,20 +35,56 @@ class AdminService:
             statement = statement.where(User.is_active == is_active)
         return list(self.db.scalars(statement))
 
-    def block_user(self, user_id: int) -> User:
+    def block_user(self, user_id: int, actor: User) -> User:
         user = self._get_user_or_404(user_id)
+        self._guard_privileged_target(user, actor, action="block")
         user.is_active = False
         return self._save_user(user)
 
-    def unblock_user(self, user_id: int) -> User:
+    def unblock_user(self, user_id: int, actor: User) -> User:
         user = self._get_user_or_404(user_id)
+        self._guard_privileged_target(user, actor, action="unblock")
         user.is_active = True
         return self._save_user(user)
 
-    def change_user_role(self, user_id: int, role: UserRole) -> User:
+    def change_user_role(self, user_id: int, role: UserRole, actor: User) -> User:
+        """Rolni o'zgartiradi. Faqat superadmin chaqiradi (endpoint darajasida).
+
+        Guard: hech kim o'z rolini o'zgartira olmaydi (o'zini qulflab qo'yish
+        yoki tasodifan huquqni yo'qotishning oldini oladi).
+        """
         user = self._get_user_or_404(user_id)
+        if user.id == actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot change your own role",
+            )
         user.role = role
         return self._save_user(user)
+
+    @staticmethod
+    def _guard_privileged_target(target: User, actor: User, *, action: str) -> None:
+        """Admin/superadminni bloklashdan himoya qiladi.
+
+        - hech kim o'zini bloklamaydi;
+        - superadmin umuman bloklanmaydi (platformaning eng yuqori huquqi);
+        - oddiy admin boshqa admin/superadminni bloklay olmaydi — faqat superadmin.
+        """
+        if target.id == actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Cannot {action} yourself",
+            )
+        if target.role == UserRole.SUPERADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Superadmin cannot be blocked",
+            )
+        if target.role == UserRole.ADMIN and actor.role != UserRole.SUPERADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a superadmin can block an admin",
+            )
 
     def list_items(
         self,

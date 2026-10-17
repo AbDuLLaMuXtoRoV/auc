@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
-from app.models.enums import OrderStatus, UserRole
+from app.models.enums import OrderStatus, is_admin
 from app.models.order import Order
 from app.models.user import User
 from app.repositories.order_repository import OrderRepository
@@ -31,7 +31,7 @@ class OrderService:
         order = self.orders.get(order_id)
         if order is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-        if user.role == UserRole.ADMIN or user.id in {order.buyer_id, order.seller_id}:
+        if is_admin(user.role) or user.id in {order.buyer_id, order.seller_id}:
             return order
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your order")
 
@@ -42,7 +42,7 @@ class OrderService:
         return self.orders.list_for_seller(seller.id)
 
     def list_admin_orders(self, admin: User) -> list[Order]:
-        if admin.role != UserRole.ADMIN:
+        if not is_admin(admin.role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
             )
@@ -52,7 +52,7 @@ class OrderService:
         order = self.orders.get(order_id)
         if order is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-        if actor.role != UserRole.ADMIN and actor.id != order.seller_id:
+        if not is_admin(actor.role) and actor.id != order.seller_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only admin or seller can manage order status",

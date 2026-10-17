@@ -24,6 +24,8 @@ class AuctionRepository:
             seller_id=seller.id,
             start_time=payload.start_time,
             end_time=payload.end_time,
+            # Anti-sniping surishidan OLDINGI original muddat — audit uchun.
+            original_end_time=payload.end_time,
             duration_days=payload.duration_days,
             status=status,
             starting_price=item.starting_price,

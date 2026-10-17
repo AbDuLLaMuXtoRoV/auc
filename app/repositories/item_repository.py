@@ -5,6 +5,19 @@ from app.models.enums import ItemStatus
 from app.models.item import Item, ItemImage
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemUpdate
+from app.services.translit import normalize_search
+
+
+def _build_search_text(title: str | None, description: str | None) -> str | None:
+    """title + description dan kanonik qidiruv matnini yasaydi.
+
+    Lotin/kirill farqini yo'qotadi, shu bois "kompyuter" va "компьютер"
+    bir xil satrga tushib, ILIKE bo'yicha bir-birini topadi.
+    """
+    parts = [part for part in (title, description) if part]
+    if not parts:
+        return None
+    return normalize_search(" ".join(parts))
 
 
 class ItemRepository:
@@ -12,7 +25,9 @@ class ItemRepository:
         self.db = db
 
     def create(self, seller: User, payload: ItemCreate) -> Item:
-        item = Item(seller_id=seller.id, **payload.model_dump())
+        data = payload.model_dump()
+        item = Item(seller_id=seller.id, **data)
+        item.search_text = _build_search_text(data.get("title"), data.get("description"))
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
@@ -21,20 +36,33 @@ class ItemRepository:
     def list(
         self,
         *,
+        q: str | None = None,
         category_id: int | None = None,
         seller_id: int | None = None,
         status: ItemStatus | None = None,
         location: str | None = None,
+        region_id: int | None = None,
+        district_id: int | None = None,
         skip: int = 0,
         limit: int = 50,
     ) -> list[Item]:
         statement = select(Item).order_by(Item.created_at.desc()).offset(skip).limit(limit)
+        if q:
+            # So'rovni ham indeksdagi kabi normallashtiramiz — lotin/kirill
+            # farqi qidiruvga ta'sir qilmasin.
+            normalized = normalize_search(q)
+            if normalized:
+                statement = statement.where(Item.search_text.ilike(f"%{normalized}%"))
         if category_id is not None:
             statement = statement.where(Item.category_id == category_id)
         if seller_id is not None:
             statement = statement.where(Item.seller_id == seller_id)
         if status is not None:
             statement = statement.where(Item.status == status)
+        if region_id is not None:
+            statement = statement.where(Item.region_id == region_id)
+        if district_id is not None:
+            statement = statement.where(Item.district_id == district_id)
         if location:
             # TODO: Replace this basic text match with geo-distance search.
             location_pattern = f"%{location}%"
@@ -53,6 +81,9 @@ class ItemRepository:
         data = payload.model_dump(exclude_unset=True)
         for field, value in data.items():
             setattr(item, field, value)
+        # title yoki description o'zgargan bo'lsa qidiruv matnini qayta yasaymiz.
+        if "title" in data or "description" in data:
+            item.search_text = _build_search_text(item.title, item.description)
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)

@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.dispute import Dispute
-from app.models.enums import DisputeReason, DisputeStatus, PaymentStatus, UserRole
+from app.models.enums import DisputeReason, DisputeStatus, PaymentStatus, is_admin
 from app.models.user import User
 from app.repositories.dispute_repository import OPEN_STATUSES, DisputeRepository
 from app.repositories.order_repository import OrderRepository
@@ -83,7 +83,7 @@ class DisputeService:
         bo'lmaydi va session yopilganda dispute o'zgarishlari ham qaytadi —
         yarim holat qolmaydi.
         """
-        if admin.role != UserRole.ADMIN:
+        if not is_admin(admin.role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
             )
@@ -134,7 +134,7 @@ class DisputeService:
         dispute = self.disputes.get(dispute_id)
         if dispute is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispute not found")
-        if user.role != UserRole.ADMIN and dispute.opened_by != user.id:
+        if not is_admin(user.role) and dispute.opened_by != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your dispute")
         return dispute
 
@@ -142,7 +142,7 @@ class DisputeService:
         return self.disputes.list_by_user(user.id)
 
     def list_open_for_admin(self, admin: User) -> list[Dispute]:
-        if admin.role != UserRole.ADMIN:
+        if not is_admin(admin.role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
             )

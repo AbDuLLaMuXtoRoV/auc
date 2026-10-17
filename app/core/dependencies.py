@@ -53,8 +53,12 @@ def current_active_user(user: Annotated[User, Depends(current_user)]) -> User:
     return user
 
 
+# Superadmin — adminning ustki to'plami: admin talab qilingan hamma joyga o'tadi.
+_ADMIN_ROLES = (UserRole.ADMIN, UserRole.SUPERADMIN)
+
+
 def current_admin_user(user: Annotated[User, Depends(current_active_user)]) -> User:
-    if user.role != UserRole.ADMIN:
+    if user.role not in _ADMIN_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
@@ -62,9 +66,20 @@ def current_admin_user(user: Annotated[User, Depends(current_active_user)]) -> U
     return user
 
 
+def current_superadmin_user(user: Annotated[User, Depends(current_active_user)]) -> User:
+    """Faqat superadmin: rol berish, adminlarni bloklash kabi sezgir amallar uchun."""
+    if user.role != UserRole.SUPERADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superadmin privileges required",
+        )
+    return user
+
+
 CurrentUser = Annotated[User, Depends(current_user)]
 CurrentActiveUser = Annotated[User, Depends(current_active_user)]
 CurrentAdminUser = Annotated[User, Depends(current_admin_user)]
+CurrentSuperAdminUser = Annotated[User, Depends(current_superadmin_user)]
 
 
 def require_roles(*allowed_roles: UserRole):
@@ -79,5 +94,8 @@ def require_roles(*allowed_roles: UserRole):
     return dependency
 
 
-CurrentSeller = Annotated[User, Depends(require_roles(UserRole.SELLER, UserRole.ADMIN))]
+CurrentSeller = Annotated[
+    User, Depends(require_roles(UserRole.SELLER, UserRole.ADMIN, UserRole.SUPERADMIN))
+]
 CurrentAdmin = CurrentAdminUser
+CurrentSuperAdmin = CurrentSuperAdminUser

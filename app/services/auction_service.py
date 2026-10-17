@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,6 +19,10 @@ from app.services.auction_state import (
 )
 from app.services.notification_service import NotificationService
 from app.services.order_service import OrderService
+
+# Second-chance offer amal qilish muddati: reserve bajarilmagach sotuvchiga
+# eng yuqori bidderga sotish taklifi shu muddat ichida ochiq turadi.
+SECOND_CHANCE_TTL = timedelta(hours=24)
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -126,6 +130,7 @@ class AuctionService:
                     detail="Only an active auction can be closed",
                 )
 
+            now = datetime.now(UTC)
             winning_bid = BidRepository(self.db).get_highest_valid_bid(auction.id)
 
             if winning_bid is None:
@@ -133,6 +138,7 @@ class AuctionService:
                 auction.status = AuctionStatus.ENDED
                 auction.winner_id = None
                 auction.highest_bidder_id = None
+                auction.closed_at = now
                 auction.item.status = ItemStatus.CANCELLED
                 self.db.add(auction)
                 self.db.commit()
@@ -144,17 +150,37 @@ class AuctionService:
             auction.winner_id = winning_bid.bidder_id
 
             if auction.reserve_price is not None and winning_bid.amount < auction.reserve_price:
-                # TODO: reserve bajarilmaganda sotuvchi va bidderlarni xabardor qil.
+                # Reserve bajarilmadi: auksionni RESERVE_NOT_MET qilamiz va
+                # sotuvchiga second-chance taklif beramiz — u eng yuqori bidderga
+                # sotishga rozi bo'lsa (24 soat ichida) order yaratiladi.
                 assert_transition(auction.status, AuctionStatus.RESERVE_NOT_MET)
                 auction.status = AuctionStatus.RESERVE_NOT_MET
+                auction.closed_at = now
+                auction.second_chance_offered_at = now
+                auction.second_chance_expires_at = now + SECOND_CHANCE_TTL
                 auction.item.status = ItemStatus.CANCELLED
                 self.db.add(auction)
+                NotificationService(self.db).create(
+                    user_id=auction.seller_id,
+                    type=NotificationType.SECOND_CHANCE,
+                    title="Rezerv narxga yetilmadi",
+                    body=(
+                        "Eng yuqori taklif rezerv narxdan past. Xohlasangiz eng yuqori "
+                        "bidderga shu narxda sotishingiz mumkin (24 soat ichida)."
+                    ),
+                    payload={
+                        "auction_id": auction.id,
+                        "highest_bid": str(winning_bid.amount),
+                        "expires_at": auction.second_chance_expires_at.isoformat(),
+                    },
+                )
                 self.db.commit()
                 self.db.refresh(auction)
                 return auction
 
             assert_transition(auction.status, AuctionStatus.ENDED)
             auction.status = AuctionStatus.ENDED
+            auction.closed_at = now
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
@@ -165,14 +191,92 @@ class AuctionService:
                 user_id=winning_bid.bidder_id,
                 type=NotificationType.WON,
                 title="Auksionda yutdingiz!",
-                body="Tabriklaymiz — lotni yutib oldingiz. To'lovni amalga oshiring.",
+                body="Tabriklaymiz — mahsulotni yutib oldingiz. To'lovni amalga oshiring.",
                 payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
             )
             notifier.create(
                 user_id=auction.seller_id,
                 type=NotificationType.SOLD,
-                title="Lotingiz sotildi",
+                title="Mahsulotingiz sotildi",
                 body="Auksioningiz g'olib bilan yakunlandi.",
+                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
+            )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+        self.db.refresh(auction)
+        return auction
+
+    def accept_second_chance(self, auction_id: int, seller: User) -> Auction:
+        """Sotuvchi second-chance taklifni qabul qiladi — eng yuqori bidderga sotadi.
+
+        Reserve bajarilmagach (RESERVE_NOT_MET) sotuvchi taklif muddati (24 soat)
+        ichida rozi bo'lsa: auksion ENDED bo'ladi, g'olib = eng yuqori VALID
+        bidder, order yaratiladi (mavjud close oqimi bilan bir xil), g'olib va
+        sotuvchi xabardor qilinadi. Muddat o'tgan yoki holat noto'g'ri bo'lsa 409.
+
+        Auksion qatori FOR UPDATE bilan qulflanadi.
+        """
+        try:
+            auction = self.auctions.get_for_update(auction_id)
+            if auction is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+                )
+            if auction.seller_id != seller.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Not your auction"
+                )
+            if auction.status != AuctionStatus.RESERVE_NOT_MET:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No active second-chance offer for this auction",
+                )
+
+            now = datetime.now(UTC)
+            if (
+                auction.second_chance_expires_at is None
+                or _as_utc(auction.second_chance_expires_at) <= now
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Second-chance offer has expired",
+                )
+
+            winning_bid = BidRepository(self.db).get_highest_valid_bid(auction.id)
+            if winning_bid is None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="No valid bids to accept",
+                )
+
+            auction.winning_bid = winning_bid
+            auction.highest_bidder_id = winning_bid.bidder_id
+            auction.winner_id = winning_bid.bidder_id
+
+            assert_transition(auction.status, AuctionStatus.ENDED)
+            auction.status = AuctionStatus.ENDED
+            auction.closed_at = now
+            auction.item.status = ItemStatus.SOLD
+            self.db.add(auction)
+            self.db.flush()
+            OrderService(self.db).create_order_for_winning_auction(auction)
+
+            notifier = NotificationService(self.db)
+            notifier.create(
+                user_id=winning_bid.bidder_id,
+                type=NotificationType.WON,
+                title="Auksionda yutdingiz!",
+                body="Sotuvchi taklifingizni qabul qildi. To'lovni amalga oshiring.",
+                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
+            )
+            notifier.create(
+                user_id=auction.seller_id,
+                type=NotificationType.SOLD,
+                title="Mahsulotingiz sotildi",
+                body="Second-chance taklif qabul qilindi — auksion g'olib bilan yakunlandi.",
                 payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
             )
             self.db.commit()

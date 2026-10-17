@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import DbSession, current_admin_user
+from app.core.dependencies import DbSession, current_admin_user, current_superadmin_user
 from app.models.auction import Auction
 from app.models.bid import Bid
 from app.models.enums import AuctionStatus, ItemStatus, OrderStatus, UserRole
@@ -20,6 +20,7 @@ from app.services.admin_service import AdminService
 router = APIRouter()
 
 AdminUser = Annotated[User, Depends(current_admin_user)]
+SuperAdminUser = Annotated[User, Depends(current_superadmin_user)]
 SkipQuery = Annotated[int, Query(ge=0)]
 LimitQuery = Annotated[int, Query(ge=1, le=100)]
 SearchQuery = Annotated[str | None, Query(max_length=120)]
@@ -45,23 +46,25 @@ def admin_read_users(
 
 
 @router.post("/users/{user_id}/block", response_model=UserRead)
-def admin_block_user(user_id: int, _admin: AdminUser, db: DbSession) -> User:
-    return AdminService(db).block_user(user_id)
+def admin_block_user(user_id: int, admin: AdminUser, db: DbSession) -> User:
+    return AdminService(db).block_user(user_id, admin)
 
 
 @router.post("/users/{user_id}/unblock", response_model=UserRead)
-def admin_unblock_user(user_id: int, _admin: AdminUser, db: DbSession) -> User:
-    return AdminService(db).unblock_user(user_id)
+def admin_unblock_user(user_id: int, admin: AdminUser, db: DbSession) -> User:
+    return AdminService(db).unblock_user(user_id, admin)
 
 
 @router.patch("/users/{user_id}/role", response_model=UserRead)
 def admin_change_user_role(
     user_id: int,
     payload: UserRoleUpdate,
-    _admin: AdminUser,
+    superadmin: SuperAdminUser,
     db: DbSession,
 ) -> User:
-    return AdminService(db).change_user_role(user_id, payload.role)
+    # Rol berish — faqat superadmin. Aks holda admin o'zini/boshqani ko'tarib
+    # huquqni cheksiz tarqatishi mumkin edi.
+    return AdminService(db).change_user_role(user_id, payload.role, superadmin)
 
 
 @router.get("/items", response_model=list[ItemRead])

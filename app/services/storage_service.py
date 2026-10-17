@@ -1,9 +1,12 @@
+import logging
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Faqat rasm turlari ruxsat etiladi. SVG ATAYLAB yo'q: u ichida
 # <script> tashib stored XSS beradi, HTML ham xuddi shunday. Bulardan
@@ -65,5 +68,39 @@ class StorageService:
             destination.unlink(missing_ok=True)
             raise
 
+        # Metadata (jumladan GPS koordinatalari) tozalanadi — maxfiylik.
+        self._strip_image_metadata(destination)
+
         public_prefix = settings.public_upload_url_prefix.rstrip("/")
         return f"{public_prefix}/{folder}/{filename}"
+
+    def _strip_image_metadata(self, path: Path) -> None:
+        """Rasmni qayta kodlab EXIF/GPS metama'lumotini olib tashlaydi.
+
+        Nega: telefon suratlari ko'pincha GPS koordinatalarini EXIF'da olib
+        yuradi — uni public rasmda qoldirish sotuvchi manzilini fosh qiladi.
+        Pillow'ni qayta kodlashda JPEG/PNG/WEBP EXIF'ni default tashlab yuboradi.
+
+        Graceful: Pillow yo'q (ImportError) yoki fayl rasm sifatida dekod
+        bo'lmasa (masalan test soxta baytlari) — ogohlantirish yozib, xom
+        faylni o'z holicha qoldiramiz. Ilova yiqilmasligi kerak.
+        """
+        try:
+            from PIL import Image
+        except ImportError:
+            logger.warning("Pillow o'rnatilmagan — rasm EXIF tozalanmadi: %s", path.name)
+            return
+
+        try:
+            with Image.open(path) as image:
+                # Animatsion rasmlarni (GIF/WEBP) buzib qo'ymaslik uchun
+                # qayta kodlamaymiz — ular odatda GPS EXIF olib yurmaydi.
+                if getattr(image, "is_animated", False):
+                    return
+                image.load()
+                image_format = image.format
+                clean = image.copy()
+            # Fayl deskriptori yopilgach yozamiz (Windows'da qayta yozish uchun).
+            clean.save(path, format=image_format)
+        except Exception as exc:  # noqa: BLE001 — har qanday dekod xatosida xom saqlaymiz
+            logger.warning("Rasm EXIF tozalanmadi (%s): %s", path.name, exc)

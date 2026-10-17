@@ -1,8 +1,24 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.enums import UserRole
+
+
+def normalize_phone(value: str) -> str:
+    """Telefon raqamdan bo'shliq/ajratgichlarni olib tashlaydi va tekshiradi.
+
+    Kirish shakli erkin ("+998 90 123 45 67", "998901234567") bo'lishi mumkin —
+    saqlash va taqqoslash uchun yagona ko'rinishga keltiriladi. Profil va OTP
+    BIR XIL funksiyadan o'tadi: aks holda OTP tasdig'i saqlangan raqamni
+    topolmay, telefon hech qachon tasdiqlanmaydi.
+    """
+    cleaned = value.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    digits = cleaned[1:] if cleaned.startswith("+") else cleaned
+    if not digits.isdigit() or not (7 <= len(digits) <= 15):
+        raise ValueError("Telefon raqam noto'g'ri formatda")
+    return cleaned
 
 
 class UserCreate(BaseModel):
@@ -27,6 +43,14 @@ class UserUpdate(BaseModel):
     avatar_url: str | None = Field(default=None, max_length=500)
     location: str | None = Field(default=None, max_length=160)
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        # Bo'sh satr = raqamni o'chirish.
+        if value is None or not value.strip():
+            return None
+        return normalize_phone(value)
+
 
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -45,3 +69,28 @@ class UserRead(BaseModel):
     role: UserRole
     created_at: datetime
     updated_at: datetime
+
+
+class UserMeRead(UserRead):
+    """Faqat foydalanuvchining o'ziga qaytariladigan kengaytirilgan profil.
+
+    `telegram_chat_id` — SHAXSIY kanal identifikatori; ommaviy `UserRead`da
+    OSHKOR QILINMAYDI (faqat egaga). `preferred_language` interfeys tili.
+    """
+
+    telegram_chat_id: str | None
+    preferred_language: str
+    # Telefon OTP orqali tasdiqlangan vaqt (None = tasdiqlanmagan).
+    phone_verified_at: datetime | None
+
+
+class TelegramLink(BaseModel):
+    """Foydalanuvchi Telegram chat'ini ulash so'rovi tanasi."""
+
+    chat_id: str = Field(min_length=1, max_length=40)
+
+
+class UserPreferencesUpdate(BaseModel):
+    """Foydalanuvchi afzalliklari: interfeys tili (uz/ru)."""
+
+    preferred_language: Literal["uz", "ru"]

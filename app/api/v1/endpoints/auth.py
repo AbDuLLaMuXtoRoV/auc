@@ -1,14 +1,20 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
 from app.core.config import settings
 from app.core.dependencies import BearerToken, CurrentActiveUser, CurrentUser, DbSession, LoginForm
 from app.core.rate_limit import RateLimiter
+from app.models.enums import OtpPurpose
 from app.models.user import User
 from app.schemas.auth import (
     AccessToken,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LogoutRequest,
     MessageResponse,
+    OtpRequestIn,
+    OtpRequestResponse,
+    OtpVerifyIn,
+    OtpVerifyResponse,
     PasswordResetTokenResponse,
     RefreshTokenRequest,
     ResetPasswordRequest,
@@ -19,8 +25,26 @@ from app.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.services.auth_service import AuthService
+from app.services.otp_service import OtpService
 
 router = APIRouter()
+
+
+def _client_ip(request: Request) -> str | None:
+    """So'rov kelgan mijoz IP'sini aniqlaydi (kunlik IP limiti uchun).
+
+    Reverse proxy ortida `X-Forwarded-For` dagi BIRINCHI IP asl mijoz bo'ladi.
+    OGOHLANTIRISH: XFF mijoz tomonidan soxtalashtirilishi mumkin — faqat
+    ishonchli proxy ortida ishonchli (rate_limit._identifier bilan bir xil naqsh).
+    """
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        first_ip = forwarded.split(",")[0].strip()
+        if first_ip:
+            return first_ip
+    if request.client is not None and request.client.host:
+        return request.client.host
+    return None
 
 
 @router.post(
@@ -40,6 +64,15 @@ def register(payload: UserCreate, db: DbSession) -> User:
 )
 def login(form_data: LoginForm, db: DbSession) -> Token:
     return AuthService(db).login_user(form_data.username, form_data.password)
+
+
+@router.post(
+    "/google",
+    response_model=Token,
+    dependencies=[Depends(RateLimiter("login", 60))],
+)
+def login_with_google(payload: GoogleLoginRequest, db: DbSession) -> Token:
+    return AuthService(db).login_with_google(payload.credential)
 
 
 @router.get("/me", response_model=UserRead)
@@ -102,3 +135,41 @@ def generate_verification_token(
 @router.post("/verify-email", response_model=UserRead)
 def verify_email(payload: VerifyEmailRequest, db: DbSession) -> User:
     return AuthService(db).verify_email(payload.token)
+
+
+@router.post(
+    "/otp/request",
+    response_model=OtpRequestResponse,
+    dependencies=[Depends(RateLimiter("auth", 60))],
+)
+def request_otp(
+    payload: OtpRequestIn,
+    request: Request,
+    db: DbSession,
+) -> OtpRequestResponse:
+    otp, code = OtpService(db).request_otp(payload.phone, payload.purpose, ip=_client_ip(request))
+    # Xom kod FAQAT non-prod muhitda qaytariladi (test/local qulayligi uchun).
+    # Prod'da kod faqat SMS orqali ketadi — javobda hech qachon oshkor bo'lmaydi.
+    debug_code = None if settings.is_production else code
+    return OtpRequestResponse(
+        message="Tasdiqlash kodi yuborildi",
+        expires_at=otp.expires_at,
+        debug_code=debug_code,
+    )
+
+
+@router.post(
+    "/otp/verify",
+    response_model=OtpVerifyResponse,
+    dependencies=[Depends(RateLimiter("auth", 60))],
+)
+def verify_otp(payload: OtpVerifyIn, db: DbSession) -> OtpVerifyResponse:
+    OtpService(db).verify_otp(payload.phone, payload.code, payload.purpose)
+    phone_verified = False
+    if payload.purpose == OtpPurpose.PHONE_VERIFY:
+        phone_verified = AuthService(db).mark_phone_verified(payload.phone)
+    return OtpVerifyResponse(
+        message="Kod tasdiqlandi",
+        verified=True,
+        phone_verified=phone_verified,
+    )
