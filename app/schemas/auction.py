@@ -22,6 +22,9 @@ class AuctionCreate(BaseModel):
     # Pul tiyinda, JSON'da string: {"minimum_bid_increment": "100000"}
     minimum_bid_increment: TiyinAmount = Field(default=TIYIN_PER_SOUM, gt=0)
     reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    # "Hoziroq sotib olish" narxi. Boshlang'ich narxdan yuqori va rezervdan
+    # past bo'lmasligi service'da (item narxi bilan) tekshiriladi.
+    buy_now_price: TiyinAmount | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def validate_schedule(self) -> "AuctionCreate":
@@ -95,6 +98,31 @@ class AuctionRead(BaseModel):
         if self.reserve_price is None:
             return None
         return self.current_price >= self.reserve_price
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def buy_now_available(self) -> bool:
+        """Hoziroq sotib olish (buy-now) hozir mumkinmi.
+
+        Birinchi taklif tushgach buy-now yopiladi: aks holda bidderlar raqobat
+        qilayotgan lotni kimdir qat'iy narxda tortib olib qo'yardi. Yakuniy
+        tekshiruv `AuctionService.buy_now` da (qulf ostida) — bu faqat UI uchun.
+        """
+        return (
+            self.buy_now_price is not None
+            and self.status == AuctionStatus.ACTIVE
+            and self.bid_count == 0
+        )
+
+
+class AuctionRelist(BaseModel):
+    """Sotilmagan lotni qayta joylash: yangi narx va muddat bilan yangi auksion."""
+
+    duration_days: Literal[3, 5, 7]
+    starting_price: TiyinAmount = Field(gt=0)
+    minimum_bid_increment: TiyinAmount = Field(default=TIYIN_PER_SOUM, gt=0)
+    reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    buy_now_price: TiyinAmount | None = Field(default=None, gt=0)
 
 
 class AuctionStatusUpdate(BaseModel):

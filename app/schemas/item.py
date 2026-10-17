@@ -85,6 +85,8 @@ class ItemRead(BaseModel):
     # buziladi. Faqat rezerv BORLIGI has_reserve orqali bildiriladi.
     reserve_price: TiyinAmount | None = Field(default=None, exclude=True)
     item_images: list[ItemImageRead] = Field(default_factory=list)
+    # Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si.
+    relisted_from_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

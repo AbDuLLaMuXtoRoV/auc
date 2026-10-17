@@ -76,6 +76,11 @@ class Auction(Base):
     second_chance_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # "Tugashiga oz qoldi" eslatmasi yuborilgan vaqt. NULL = hali yuborilmagan;
+    # eslatma auksionga BIR MARTA ketadi (anti-sniping uzaytirsa ham takrorlanmaydi).
+    ending_soon_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

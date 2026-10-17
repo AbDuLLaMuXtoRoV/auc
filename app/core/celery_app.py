@@ -50,4 +50,8 @@ if settings.celery_beat_enabled:
             "task": "app.tasks.scheduled.auto_complete_orders_task",
             "schedule": schedule(settings.auto_complete_interval_seconds),
         },
+        "notify-ending-soon": {
+            "task": "app.tasks.scheduled.notify_ending_soon_task",
+            "schedule": schedule(settings.ending_soon_interval_seconds),
+        },
     }

@@ -3,14 +3,23 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ArrowRightIcon, PackageOpenIcon, PlusIcon, TriangleAlertIcon } from "lucide-react"
+import {
+  ArrowRightIcon,
+  PackageOpenIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  TriangleAlertIcon,
+  XIcon,
+} from "lucide-react"
+import { toast } from "sonner"
 
 import { formatTiyin } from "@/lib/format"
 import type { Auction, Item, ItemStatus, ItemCondition } from "@/lib/api/types"
-import { listAuctions } from "@/lib/api/endpoints"
-import { listSellerItems } from "@/lib/api/seller"
+import { cancelListing, listSellerAuctions, listSellerItems } from "@/lib/api/seller"
 import { ApiError } from "@/lib/api/client"
 import { useAuthStore } from "@/lib/store/auth"
+import { ConfirmDialog } from "@/components/lot/confirm-dialog"
+import { RelistDialog } from "@/components/seller/relist-dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -94,22 +103,79 @@ function SecondChanceNotice({ auction }: { auction: Auction }) {
   )
 }
 
+/** Sotuvchi bekor qila oladigan holatlar — sotilgan/bekor qilingan lot emas. */
+const CANCELLABLE_STATUSES: ReadonlySet<ItemStatus> = new Set([
+  "draft",
+  "scheduled",
+  "pending",
+  "active",
+])
+
+/** Sotilmay tugagan auksion: taklifsiz yakunlangan yoki rezervga yetmagan. */
+function isUnsold(auction: Auction | undefined): auction is Auction {
+  return (
+    auction != null &&
+    ((auction.status === "ended" && auction.winner_id == null) ||
+      auction.status === "reserve_not_met")
+  )
+}
+
 function ListingCard({
   item,
-  auctionId,
+  auction,
   secondChance,
+  relisted,
+  onCancelled,
+  onRelisted,
 }: {
   item: Item
-  auctionId?: number
+  auction?: Auction
   secondChance?: Auction
+  /** Bu e'londan allaqachon qayta joylangan nusxa bor. */
+  relisted: boolean
+  onCancelled: (item: Item) => void
+  onRelisted: (auction: Auction) => void
 }) {
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [cancelling, setCancelling] = React.useState(false)
+  const [cancelError, setCancelError] = React.useState<string | null>(null)
+  const [relistOpen, setRelistOpen] = React.useState(false)
+
+  const canCancel = CANCELLABLE_STATUSES.has(item.status)
+  // Taklif tushgan lotni bekor qilib bo'lmaydi — xaridorlar bidi kuymasin.
+  const hasBids = (auction?.bid_count ?? 0) > 0
+  const unsold = isUnsold(auction)
+
+  const doCancel = async () => {
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const updated = await cancelListing(item.id)
+      onCancelled(updated)
+      setConfirmOpen(false)
+      toast.success("Lot bekor qilindi.")
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setCancelError("Lotga taklif tushgan yoki auksion yakunlangan — endi bekor qilib boʻlmaydi.")
+      } else {
+        setCancelError(e instanceof ApiError ? e.detail : "Lotni bekor qilib boʻlmadi.")
+      }
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   return (
     <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid min-w-0 gap-1.5">
           <h3 className="truncate text-base font-medium text-foreground">{item.title}</h3>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+            {unsold ? (
+              <Badge variant="outline">Sotilmadi</Badge>
+            ) : (
+              <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+            )}
             <Badge variant="outline">{CONDITION_LABEL[item.condition]}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -119,17 +185,77 @@ function ListingCard({
             </span>
           </p>
         </div>
-        <div className="shrink-0">
-          {auctionId != null ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {auction != null ? (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/lot/${auctionId}`}>Koʻrish</Link>
+              <Link href={`/lot/${auction.id}`}>Koʻrish</Link>
             </Button>
           ) : (
             <span className="text-xs text-muted-foreground">Auksion faol emas</span>
           )}
+          {unsold && !relisted && (
+            <Button size="sm" onClick={() => setRelistOpen(true)}>
+              <RotateCcwIcon aria-hidden="true" />
+              Qayta joylash
+            </Button>
+          )}
+          {unsold && relisted && (
+            <span className="text-xs text-muted-foreground">Qayta joylangan</span>
+          )}
+          {canCancel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              disabled={hasBids}
+              onClick={() => {
+                setCancelError(null)
+                setConfirmOpen(true)
+              }}
+            >
+              <XIcon aria-hidden="true" />
+              Bekor qilish
+            </Button>
+          )}
         </div>
       </div>
+      {canCancel && hasBids && (
+        <p className="text-xs text-muted-foreground">
+          Lotga taklif tushgan — uni endi bekor qilib boʻlmaydi. Auksion muddati tugaguncha davom
+          etadi.
+        </p>
+      )}
       {secondChance && <SecondChanceNotice auction={secondChance} />}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Lotni bekor qilasizmi?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{item.title}</span> katalogdan olib
+            tashlanadi{auction != null ? " va auksion toʻxtatiladi" : ""}. Bu amalni qaytarib
+            boʻlmaydi.
+          </>
+        }
+        confirmLabel="Ha, bekor qilish"
+        cancelLabel="Yoʻq"
+        variant="destructive"
+        loading={cancelling}
+        error={cancelError}
+        onConfirm={doCancel}
+      />
+      {unsold && !relisted && (
+        <RelistDialog
+          auction={auction}
+          item={item}
+          open={relistOpen}
+          onOpenChange={setRelistOpen}
+          onRelisted={(created) => {
+            setRelistOpen(false)
+            onRelisted(created)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -151,11 +277,15 @@ function ListingSkeletons() {
   )
 }
 
+/** "Mening lotlarim"da ko'rsatiladigan auksion holatlari (bekor qilinganlar kerak emas). */
+const SELLER_AUCTION_STATUSES = ["active", "scheduled", "reserve_not_met", "ended"] as const
+
 /**
- * Sotuvchining lotlari. Foydalanuvchi tovarlari + faol auksionlar birlashtiriladi:
- * har tovarga faol auksion topilsa "Koʻrish" havolasi /lot/{auctionId} ga oʻtadi.
- * Rezervga yetmagan, ikkinchi imkoniyat muddati tugamagan auksionlar uchun alohida
- * ogohlantirish chiqadi — sotuvchi lot sahifasida eng yuqori taklifni qabul qila oladi.
+ * Sotuvchining lotlari. Tovarlar + sotuvchining O'Z auksionlari (seller_id filtri
+ * bilan — ilgari butun saytning birinchi 100 ta auksioni olinib, sotuvchinikilar
+ * tushib qolishi mumkin edi) birlashtiriladi. Rezervga yetmagan, ikkinchi imkoniyat
+ * muddati tugamagan auksionlar uchun ogohlantirish chiqadi; sotilmay tugaganlarini
+ * shu yerdan qayta joylash mumkin.
  */
 function MyListings() {
   const status = useAuthStore((s) => s.status)
@@ -163,9 +293,11 @@ function MyListings() {
   const pathname = usePathname()
 
   const [items, setItems] = React.useState<Item[] | null>(null)
-  const [auctionByItem, setAuctionByItem] = React.useState<Record<number, number>>({})
+  const [auctionByItem, setAuctionByItem] = React.useState<Record<number, Auction>>({})
   const [secondChanceByItem, setSecondChanceByItem] = React.useState<Record<number, Auction>>({})
   const [error, setError] = React.useState<string | null>(null)
+  // Qayta joylashdan keyin ro'yxatni yangidan yuklash uchun.
+  const [reloadKey, setReloadKey] = React.useState(0)
 
   const sellerId = user?.id
 
@@ -174,18 +306,19 @@ function MyListings() {
     let alive = true
     Promise.all([
       listSellerItems(sellerId),
-      listAuctions("active", 100).catch(() => []),
-      listAuctions("reserve_not_met", 100).catch(() => []),
+      Promise.all(
+        SELLER_AUCTION_STATUSES.map((s) => listSellerAuctions(sellerId, s).catch(() => []))
+      ),
     ])
-      .then(([its, aucs, unmet]) => {
+      .then(([its, byStatus]) => {
         if (!alive) return
-        const map: Record<number, number> = {}
-        for (const a of aucs) map[a.item_id] = a.id
+        const map: Record<number, Auction> = {}
+        for (const a of byStatus.flat()) map[a.item_id] = a
         const now = Date.now()
         const sc: Record<number, Auction> = {}
-        for (const a of unmet) {
+        for (const a of Object.values(map)) {
           if (
-            a.seller_id === sellerId &&
+            a.status === "reserve_not_met" &&
             a.second_chance_expires_at &&
             new Date(a.second_chance_expires_at).getTime() > now
           ) {
@@ -204,7 +337,22 @@ function MyListings() {
     return () => {
       alive = false
     }
-  }, [status, sellerId])
+  }, [status, sellerId, reloadKey])
+
+  const handleRelisted = React.useCallback(() => {
+    toast.success("Lot qayta joylandi — yangi auksion boshlandi.")
+    setReloadKey((k) => k + 1)
+  }, [])
+
+  // Bekor qilingan lot ro'yxatda qoladi (holati yangilanadi), auksion havolasi olinadi.
+  const handleCancelled = React.useCallback((updated: Item) => {
+    setItems((prev) => prev?.map((it) => (it.id === updated.id ? updated : it)) ?? prev)
+    setAuctionByItem((prev) => {
+      const next = { ...prev }
+      delete next[updated.id]
+      return next
+    })
+  }, [])
 
   if (status === "idle") {
     return <ListingSkeletons />
@@ -249,6 +397,10 @@ function MyListings() {
     )
   }
 
+  const relistedSources = new Set(
+    items.map((it) => it.relisted_from_id).filter((id): id is number => id != null)
+  )
+
   return (
     <div className="grid gap-3">
       {error && (
@@ -260,8 +412,11 @@ function MyListings() {
         <ListingCard
           key={item.id}
           item={item}
-          auctionId={auctionByItem[item.id]}
+          auction={auctionByItem[item.id]}
           secondChance={secondChanceByItem[item.id]}
+          relisted={relistedSources.has(item.id)}
+          onCancelled={handleCancelled}
+          onRelisted={handleRelisted}
         />
       ))}
     </div>

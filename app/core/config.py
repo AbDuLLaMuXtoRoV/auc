@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     # o'zgartirmasligi kerak. Local/prod'da .env orqali yoqiladi.
     auction_closer_enabled: bool = False
     auction_closer_interval_seconds: int = 5
+    # "Tugashiga oz qoldi" eslatmasi: auksion tugashidan shuncha daqiqa oldin
+    # kuzatuvchi va bidderlarga bir marta yuboriladi (closer bilan bir tik'da).
+    ending_soon_lead_minutes: int = 60
+    ending_soon_interval_seconds: int = 60
 
     # Dinamik (darajali) minimal stavka qadami poli. Prod'da yoqiq: narxga
     # qarab qadam avtomatik oshadi (5 000 so'mdan boshlab). Test muhitida

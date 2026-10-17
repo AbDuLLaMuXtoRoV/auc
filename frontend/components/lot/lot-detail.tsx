@@ -130,10 +130,11 @@ function LotDetail({ auctionId }: { auctionId: number }) {
   // Haqiqiy rasmlar (asosiysi birinchi, to'liq URL) — `lib/item-image`.
   const imageUrls = itemImageUrls(item)
 
-  // Anti-sniping: so'nggi daqiqalardagi taklif tugash vaqtini surgan bo'lsa.
+  // Anti-sniping: so'nggi daqiqalardagi taklif tugash vaqtini KEYINGA surgan bo'lsa.
+  // Buy-now muddatdan oldin yopganda end_time ertaroq bo'ladi — bu uzaytirish emas.
   const extended =
     auction.original_end_time != null &&
-    Date.parse(auction.original_end_time) !== Date.parse(auction.end_time)
+    Date.parse(auction.end_time) > Date.parse(auction.original_end_time)
 
   return (
     <div>

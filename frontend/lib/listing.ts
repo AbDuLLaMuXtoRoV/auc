@@ -176,6 +176,31 @@ export function autoIncrementSoum(startingSoum: number): number {
   return Math.max(1000, Math.ceil((startingSoum * 0.05) / 1000) * 1000)
 }
 
+/**
+ * "Hoziroq sotib olish" narxi tekshiruvi (so'm) — server `_validate_pricing` bilan
+ * bir xil qoida. 0 — o'chiq, xato yo'q. Xato matnini yoki null qaytaradi.
+ */
+export function buyNowError(buyNowSoum: number, startingSoum: number, reserveSoum: number): string | null {
+  if (buyNowSoum <= 0 || startingSoum <= 0) return null
+  if (buyNowSoum <= startingSoum) return "Bu narx boshlangʻich narxdan yuqori boʻlishi kerak."
+  if (reserveSoum > 0 && buyNowSoum < reserveSoum) return "Bu narx zaxira narxdan past boʻlmasligi kerak."
+  return null
+}
+
+/**
+ * Qayta joylash uchun tavsiya qilingan boshlang'ich narx (so'm).
+ *
+ * Taklif tushgan bo'lsa (rezervga yetmagan) — eng yuqori taklif: bozor shu narxni
+ * allaqachon tasdiqlagan. Taklif bo'lmagan bo'lsa — eski narxdan 10% past, 1 000
+ * so'mga pastga yaxlitlangan: narx qotib qolmasligi kerak (loyiha g'oyasi).
+ */
+export function suggestRelistSoum(previousStartSoum: number, highestBidSoum: number | null): number {
+  if (highestBidSoum != null && highestBidSoum > 0) return highestBidSoum
+  const lowered = previousStartSoum * 0.9
+  if (lowered >= 1000) return Math.floor(lowered / 1000) * 1000
+  return Math.max(1, Math.floor(lowered))
+}
+
 const endsAtFormatter = new Intl.DateTimeFormat("uz-UZ", {
   timeZone: "Asia/Tashkent",
   day: "numeric",

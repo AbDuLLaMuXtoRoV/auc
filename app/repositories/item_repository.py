@@ -89,6 +89,49 @@ class ItemRepository:
         self.db.refresh(item)
         return item
 
+    def get_relist_of(self, item_id: int) -> Item | None:
+        """Berilgan e'londan qayta joylangan e'lon (bo'lsa)."""
+        return self.db.scalar(select(Item).where(Item.relisted_from_id == item_id))
+
+    def clone_for_relist(
+        self, source: Item, *, starting_price: int, reserve_price: int | None
+    ) -> Item:
+        """Sotilmagan e'lonning nusxasi — qayta joylash uchun. COMMIT QILMAYDI.
+
+        Rasm fayllari ko'chirilmaydi: yangi yozuvlar o'sha URL'larga ishora
+        qiladi (fayl o'chirish yo'li yo'q, shuning uchun ulashish xavfsiz).
+        Narx yangi auksion bilan birga keladi; ko'rishlar soni noldan boshlanadi.
+        """
+        clone = Item(
+            seller_id=source.seller_id,
+            title=source.title,
+            description=source.description,
+            category_id=source.category_id,
+            condition=source.condition,
+            status=ItemStatus.DRAFT,
+            images=list(source.images or []),
+            location=source.location,
+            item_location=source.item_location,
+            year=source.year,
+            equipment=source.equipment,
+            defects=source.defects,
+            video_url=source.video_url,
+            region_id=source.region_id,
+            district_id=source.district_id,
+            search_text=source.search_text,
+            starting_price=starting_price,
+            reserve_price=reserve_price,
+            relisted_from_id=source.id,
+        )
+        self.db.add(clone)
+        self.db.flush()
+        for image in source.item_images:
+            self.db.add(
+                ItemImage(item_id=clone.id, image_url=image.image_url, is_primary=image.is_primary)
+            )
+        self.db.flush()
+        return clone
+
     def mark_cancelled(self, item: Item) -> Item:
         item.status = ItemStatus.CANCELLED
         self.db.add(item)

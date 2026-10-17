@@ -13,6 +13,7 @@ from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.auction_closer import close_due_auctions
 from app.services.auto_complete import auto_complete_due_orders
+from app.services.ending_soon import notify_ending_soon
 
 logger = logging.getLogger(__name__)
 
@@ -39,5 +40,18 @@ def auto_complete_orders_task() -> int:
         if done:
             logger.info("Celery: %s ta order avtomatik yakunlandi", done)
         return done
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.notify_ending_soon_task")
+def notify_ending_soon_task() -> int:
+    """Tugashiga oz qolgan auksionlar bo'yicha eslatma. Eslatilganlar sonini qaytaradi."""
+    db = SessionLocal()
+    try:
+        notified = notify_ending_soon(db)
+        if notified:
+            logger.info("Celery: %s ta auksion bo'yicha ENDING_SOON yuborildi", notified)
+        return notified
     finally:
         db.close()

@@ -31,6 +31,7 @@ ikkalasi ham 110 qo'yadi, ikkalasi ham qabul bo'ladi. Oxirgi yozgan yutadi. Ma'l
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+
 def place_bid(self, auction_id: int, bidder: User, payload: BidCreate) -> Bid:
     """Bidni atomik qabul qiladi.
 
@@ -60,7 +61,7 @@ def place_bid(self, auction_id: int, bidder: User, payload: BidCreate) -> Bid:
     self._apply_soft_close_extension(auction)
 
     self.db.add_all([bid, auction])
-    self.db.commit()   # lock shu yerda bo'shaydi
+    self.db.commit()  # lock shu yerda bo'shaydi
     self.db.refresh(bid)
     return bid
 ```
@@ -101,14 +102,14 @@ def _resolve_proxy(auction: Auction, new_max: int, bidder_id: int) -> int:
     current_max = auction.high_bidder_max
 
     if current_max is None:
-        return auction.starting_price          # birinchi bid: boshlang'ich narx
+        return auction.starting_price  # birinchi bid: boshlang'ich narx
 
     if new_max > current_max:
         # Yangi bidder yutdi: eski maxdan bir qadam yuqori, lekin o'z maxidan oshmagan holda
         return min(new_max, current_max + step)
 
     if new_max == current_max:
-        return current_max                     # teng — vaqt bo'yicha birinchisi yutadi
+        return current_max  # teng — vaqt bo'yicha birinchisi yutadi
 
     # Yangi bidder yutqazdi: mavjud yetakchi bir qadam ko'tariladi
     return min(current_max, new_max + step)
@@ -124,7 +125,7 @@ Oshkor bo'lsa — raqib aniq bir tiyin yuqori qo'yib har doim yutadi. Bu auksion
 
 ```python
 seconds_until_close = (end_time - now).total_seconds()
-if 0 < seconds_until_close <= settings.soft_close_window_seconds:   # 120s
+if 0 < seconds_until_close <= settings.soft_close_window_seconds:  # 120s
     auction.end_time = end_time + timedelta(seconds=settings.soft_close_extension_seconds)  # +120s
 ```
 
@@ -162,7 +163,7 @@ async def close_expired_auctions(db: Session) -> None:
             auction = db.execute(
                 select(Auction)
                 .where(Auction.id == auction_id, Auction.status == AuctionStatus.ACTIVE)
-                .with_for_update(skip_locked=True)   # boshqa worker olgan bo'lsa — o'tkazib yubor
+                .with_for_update(skip_locked=True)  # boshqa worker olgan bo'lsa — o'tkazib yubor
             ).scalar_one_or_none()
             if auction is None:
                 continue
@@ -197,13 +198,14 @@ scheduled ──► active ──► ended
 ```python
 _ALLOWED: dict[AuctionStatus, frozenset[AuctionStatus]] = {
     AuctionStatus.SCHEDULED: frozenset({AuctionStatus.ACTIVE, AuctionStatus.CANCELLED}),
-    AuctionStatus.ACTIVE: frozenset({
-        AuctionStatus.ENDED, AuctionStatus.RESERVE_NOT_MET, AuctionStatus.CANCELLED
-    }),
+    AuctionStatus.ACTIVE: frozenset(
+        {AuctionStatus.ENDED, AuctionStatus.RESERVE_NOT_MET, AuctionStatus.CANCELLED}
+    ),
     AuctionStatus.ENDED: frozenset(),
     AuctionStatus.RESERVE_NOT_MET: frozenset(),
     AuctionStatus.CANCELLED: frozenset(),
 }
+
 
 def transition(auction: Auction, new: AuctionStatus) -> None:
     """Auksion holatini FAQAT shu funksiya o'zgartiradi.
@@ -239,3 +241,32 @@ auksionni `cancelled` qilib qo'yishi mumkin. Bu endpoint state machine bilan qat
 **KRITIK:** hozir `tests/conftest.py` **SQLite in-memory** (`sqlite+pysqlite:///:memory:`) ishlatadi.
 SQLite'da `FOR UPDATE` yo'q va u indamay o'tkazib yuboradi → atomiklik testi **yolg'on yashil**
 beradi. Race testi yozishdan **oldin** test bazasi Postgres'ga ko'chirilishi shart (Faza A).
+
+## 9. Buy-now, qayta joylash, "tugashiga oz qoldi" — BOR
+
+**Buy-now** (`AuctionService.buy_now`, `POST /auctions/{id}/buy-now`):
+- Sotuvchi auksion ochishda `buy_now_price` beradi (ixtiyoriy). Qoida (`_validate_pricing`):
+  `buy_now > starting_price` va rezerv bo'lsa `buy_now >= reserve_price` — aks holda 400.
+- Faqat **birinchi taklifgacha** ochiq: tirik bid bo'lsa 409. `AuctionRead.buy_now_available`
+  UI uchun (faol + `bid_count == 0`), yakuniy tekshiruv qulf ostida.
+- Natija oddiy g'alaba bilan bir xil: buy-now narxida VALID bid yoziladi, `ACTIVE → ENDED`
+  state machine orqali, order mavjud oqim bilan yaratiladi (buyer premium to'lovda). FOR UPDATE —
+  ikkinchi xaridor yoki parallel bid 409 oladi. Sotuvchi o'z lotini sotib ololmaydi (400).
+
+**Qayta joylash** (`AuctionService.relist`, `POST /auctions/{id}/relist`):
+- Faqat sotilmagan lot: `ENDED` + g'olibsiz yoki `RESERVE_NOT_MET`. Boshqasi 409, begona 403.
+- `auctions.item_id` UNIQUE bo'lgani uchun e'lon **nusxa ko'chiriladi** (matn, rasm yozuvlari,
+  hudud) — yangi item `relisted_from_id` bilan + yangi ACTIVE auksion, bitta tranzaksiyada.
+- `items.relisted_from_id` UNIQUE: bitta e'lon faqat bir marta qayta joylanadi.
+- `RESERVE_NOT_MET`da ochiq second-chance **yopiladi** (`second_chance_expires_at = now`) —
+  aks holda bitta tovar ikki xaridorga sotilishi mumkin edi.
+- UI tavsiyasi: taklif bo'lgan bo'lsa eng yuqori taklif, bo'lmasa eski narx −10%.
+
+**"Tugashiga oz qoldi"** (`services/ending_soon.py`):
+- Tugashdan `ENDING_SOON_LEAD_MINUTES` (60) oldin kuzatuvchilar + tirik bidli foydalanuvchilarga
+  (sotuvchidan tashqari) `ENDING_SOON` bildirishnoma (in-app + Telegram + push). Yetakchi va
+  ortda qolganlarga matn har xil.
+- Bir marta: `auctions.ending_soon_notified_at`; anti-sniping uzaytirsa ham takrorlanmaydi.
+  Qatorlar `FOR UPDATE SKIP LOCKED` — beat va in-process closer bir auksionni ikki marta olmaydi.
+- Ishga tushirish: closer tik'ida (in-process) va Celery beat `notify-ending-soon`
+  (`ENDING_SOON_INTERVAL_SECONDS`, 60).

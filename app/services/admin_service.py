@@ -8,6 +8,7 @@ from app.models.enums import AuctionStatus, ItemStatus, OrderStatus, UserRole
 from app.models.item import Item
 from app.models.order import Order
 from app.models.user import User
+from app.services.auction_service import AuctionService
 
 
 class AdminService:
@@ -116,7 +117,21 @@ class AdminService:
         return self._save_item(item)
 
     def reject_item(self, item_id: int) -> Item:
+        """Moderatsiya: e'lonni rad etadi.
+
+        Jonli auksion bo'lsa u ham bekor qilinadi — aks holda rad etilgan e'lon
+        bid qabul qilishda davom etar, taklifsiz tugasa esa sotuvchi uni qayta
+        joylab moderatsiyani chetlab o'tardi.
+        """
         item = self._get_item_or_404(item_id)
+        auction = item.auction
+        if auction is not None and auction.status in (
+            AuctionStatus.SCHEDULED,
+            AuctionStatus.ACTIVE,
+        ):
+            AuctionService(self.db).cancel_as_admin(auction.id)
+            self.db.refresh(item)
+            return item
         item.status = ItemStatus.CANCELLED
         return self._save_item(item)
 
@@ -139,14 +154,8 @@ class AdminService:
         return list(self.db.scalars(statement))
 
     def cancel_auction(self, auction_id: int) -> Auction:
-        auction = self.db.get(Auction, auction_id)
-        if auction is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found")
-        auction.status = AuctionStatus.CANCELLED
-        self.db.add(auction)
-        self.db.commit()
-        self.db.refresh(auction)
-        return auction
+        # Qulf + state machine + tovarni ham bekor qilish — AuctionService'da.
+        return AuctionService(self.db).cancel_as_admin(auction_id)
 
     def list_bids(
         self,

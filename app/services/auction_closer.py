@@ -23,6 +23,7 @@ from app.db.session import SessionLocal
 from app.models.auction import Auction
 from app.models.enums import AuctionStatus
 from app.services.auction_service import AuctionService
+from app.services.ending_soon import notify_ending_soon
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +83,17 @@ async def _closer_loop() -> None:
 
 
 def _run_once() -> None:
-    """Bitta tik: sessiya ochib, yop, yop."""
+    """Bitta tik: sessiya ochib, muddati o'tganlarni yopadi va eslatmalarni yuboradi."""
     db = SessionLocal()
     try:
         closed = close_due_auctions(db)
         if closed:
             logger.info("Auksion closer %s ta auksionni yopdi", closed)
+        # Eslatma xatosi yopishni to'xtatmasin — alohida himoyalangan.
+        try:
+            notify_ending_soon(db)
+        except Exception:
+            logger.exception("ENDING_SOON eslatmasini yuborishda xato")
     finally:
         db.close()
 

@@ -112,6 +112,14 @@ export function retractBid(bidId: number): Promise<Bid> {
   return apiFetch<Bid>(`/bids/${bidId}/retract`, { method: "POST" });
 }
 
+/**
+ * Lotni "hoziroq sotib olish" narxida sotib olish. Faqat birinchi taklifgacha;
+ * taklif tushgan yoki auksion yakunlangan bo'lsa server 409 qaytaradi.
+ */
+export function buyNow(auctionId: number): Promise<Auction> {
+  return apiFetch<Auction>(`/auctions/${auctionId}/buy-now`, { method: "POST" });
+}
+
 /** Sotuvchi: rezervga yetmagan auksionni eng yuqori taklifga sotish (24 soat ichida). */
 export function acceptSecondChance(auctionId: number): Promise<Auction> {
   return apiFetch<Auction>(`/auctions/${auctionId}/second-chance/accept`, { method: "POST" });

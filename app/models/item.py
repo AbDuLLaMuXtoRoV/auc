@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, String, Text
+from sqlalchemy import JSON, BigInteger, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,6 +11,7 @@ from app.money import Tiyin
 
 class Item(Base):
     __tablename__ = "items"
+    __table_args__ = (UniqueConstraint("relisted_from_id", name="uq_items_relisted_from_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
@@ -45,6 +46,13 @@ class Item(Base):
     # Pul — tiyinda (BIGINT). Batafsil: app/money/
     starting_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     reserve_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    # Sotilmagan lot qayta joylanganda yangi e'lon eskisiga ishora qiladi.
+    # UNIQUE: bitta e'lon faqat bir marta qayta joylanadi (parallel so'rov ham
+    # ikki nusxa yarata olmaydi). Har item'da faqat bitta auksion bo'lgani uchun
+    # qayta joylash = yangi item + yangi auksion.
+    relisted_from_id: Mapped[int | None] = mapped_column(
+        ForeignKey("items.id", name="fk_items_relisted_from_id_items"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

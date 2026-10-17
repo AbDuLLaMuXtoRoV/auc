@@ -19,6 +19,8 @@ export type PreviewData = {
   incrementSoum: number
   incrementIsAuto: boolean
   reserveSoum: number
+  /** 0 — "hoziroq sotib olish" o'chiq. */
+  buyNowSoum: number
   durationDays: number
   endsAt: string | null
   place: string
@@ -130,6 +132,9 @@ function ListingPreview({
           )}
         </Row>
         <Row label="Zaxira narx">{data.reserveSoum > 0 ? formatSom(data.reserveSoum) : "Yoʻq"}</Row>
+        <Row label="Hoziroq sotib olish">
+          {data.buyNowSoum > 0 ? formatSom(data.buyNowSoum) : "Yoʻq"}
+        </Row>
         {data.videoUrl && <Row label="Video">{data.videoUrl}</Row>}
       </dl>
 

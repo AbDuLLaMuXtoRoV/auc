@@ -2,17 +2,19 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.enums import is_admin
+from app.models.enums import AuctionStatus, ItemStatus, is_admin
 from app.models.item import Item, ItemImage
 from app.models.user import User
 from app.repositories.item_repository import ItemRepository
 from app.repositories.region_repository import RegionRepository
 from app.schemas.item import ItemCreate, ItemUpdate
+from app.services.auction_service import AuctionService
 from app.services.storage_service import StorageService
 
 
 class ItemService:
     def __init__(self, db: Session) -> None:
+        self.db = db
         self.repository = ItemRepository(db)
         self.regions = RegionRepository(db)
         self.storage = StorageService()
@@ -38,8 +40,39 @@ class ItemService:
         return self.repository.update(item, payload)
 
     def cancel_item(self, item_id: int, actor: User) -> Item:
+        """E'lonni bekor qiladi (sotuvchi "e'lonni olib tashlash").
+
+        Ilgari faqat item.status yozilardi — jonli auksion esa ishlashda
+        davom etar, bid qabul qilar va yopilganda bekor qilingan tovarga
+        order yaratardi. Endi jonli auksion bo'lsa bekor qilish auksion
+        oqimi orqali o'tadi: qator FOR UPDATE bilan qulflanadi, state machine
+        tekshiriladi va bidli auksion bekor qilinmaydi (bidlar kuymaydi).
+        Yakunlangan auksion yoki sotilgan tovar bekor qilinmaydi.
+        """
         item = self.get_item_or_404(item_id)
         self._ensure_can_manage_item(item, actor)
+        if item.status == ItemStatus.CANCELLED:
+            return item
+        if item.status == ItemStatus.SOLD:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Sold item cannot be cancelled"
+            )
+
+        auction = item.auction
+        if auction is not None:
+            if auction.status in (AuctionStatus.SCHEDULED, AuctionStatus.ACTIVE):
+                auctions = AuctionService(self.db)
+                if is_admin(actor.role) and actor.id != item.seller_id:
+                    auctions.cancel_as_admin(auction.id)
+                else:
+                    auctions.set_status_by_seller(auction.id, actor, AuctionStatus.CANCELLED)
+                self.db.refresh(item)
+                return item
+            if auction.status != AuctionStatus.CANCELLED:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Auction has already finished; listing cannot be cancelled",
+                )
         return self.repository.mark_cancelled(item)
 
     def upload_image(

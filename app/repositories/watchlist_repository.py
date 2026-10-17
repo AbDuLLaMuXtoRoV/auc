@@ -32,3 +32,7 @@ class WatchlistRepository:
             .order_by(Watchlist.created_at.desc())
         )
         return list(self.db.scalars(statement))
+
+    def list_user_ids_for_auction(self, auction_id: int) -> list[int]:
+        statement = select(Watchlist.user_id).where(Watchlist.auction_id == auction_id)
+        return list(self.db.scalars(statement))

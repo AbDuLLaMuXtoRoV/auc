@@ -18,6 +18,7 @@ import {
   DESCRIPTION_MAX,
   NO_DEFECTS_TEXT,
   autoIncrementSoum,
+  buyNowError,
   categoryProfile,
   formatEndsAt,
   suggestCategorySlug,
@@ -101,6 +102,8 @@ const schema = z
     minimum_bid_increment: z.number().int().nonnegative(),
     /** 0 — zaxira narx yo'q. */
     reserve_price: z.number().int().nonnegative(),
+    /** 0 — "hoziroq sotib olish" o'chiq. */
+    buy_now_price: z.number().int().nonnegative(),
   })
   .superRefine((v, ctx) => {
     // Yangi tovarda nuqson bo'lmaydi; boshqa holatda — yo belgi, yo tavsif.
@@ -117,6 +120,10 @@ const schema = z
         path: ["reserve_price"],
         message: "Zaxira narx boshlangʻich narxdan past boʻlishi mumkin emas.",
       })
+    }
+    const buyNowIssue = buyNowError(v.buy_now_price, v.starting_price, v.reserve_price)
+    if (buyNowIssue) {
+      ctx.addIssue({ code: "custom", path: ["buy_now_price"], message: buyNowIssue })
     }
   })
 
@@ -139,6 +146,7 @@ const DEFAULTS: FormValues = {
   video_url: "",
   minimum_bid_increment: 0,
   reserve_price: 0,
+  buy_now_price: 0,
 }
 
 type Draft = { values: FormValues; categoryTouched: boolean }
@@ -229,6 +237,7 @@ function SellForm() {
   const regionId = useWatch({ control, name: "region_id" })
   const districtId = useWatch({ control, name: "district_id" })
   const reservePrice = useWatch({ control, name: "reserve_price" })
+  const buyNowPrice = useWatch({ control, name: "buy_now_price" })
   const incrementInput = useWatch({ control, name: "minimum_bid_increment" })
   const equipmentValue = useWatch({ control, name: "equipment" })
 
@@ -239,6 +248,7 @@ function SellForm() {
   const endsAt = now != null ? formatEndsAt(now, Number(durationDays)) : null
   // Zaxira xatosi darhol ko'rinsin (blur kutilmasin).
   const reserveTooLow = reservePrice > 0 && startingPrice > 0 && reservePrice < startingPrice
+  const buyNowIssue = buyNowError(buyNowPrice, startingPrice, reservePrice)
 
   const regions = useRegions()
   const districts = useDistricts(regionId ? Number(regionId) : null)
@@ -408,6 +418,7 @@ function SellForm() {
             : autoIncrementSoum(values.starting_price)
         ),
         reserve_price: reserveTiyin,
+        buy_now_price: values.buy_now_price > 0 ? soumToTiyin(values.buy_now_price) : undefined,
       })
 
       draft.clear()
@@ -449,6 +460,7 @@ function SellForm() {
       incrementSoum: effectiveIncrement,
       incrementIsAuto: values.minimum_bid_increment === 0,
       reserveSoum: values.reserve_price,
+      buyNowSoum: values.buy_now_price,
       durationDays: Number(values.duration_days),
       endsAt,
       place: placeText,
@@ -467,7 +479,9 @@ function SellForm() {
   }
 
   const extrasHaveError = Boolean(errors.video_url || errors.location)
-  const advancedHasError = Boolean(errors.reserve_price || reserveTooLow)
+  const advancedHasError = Boolean(
+    errors.reserve_price || reserveTooLow || errors.buy_now_price || buyNowIssue
+  )
 
   return (
     <form onSubmit={toPreview} noValidate className="grid gap-6">
@@ -810,8 +824,8 @@ function SellForm() {
           startingPrice > 0
             ? `Minimal qadam ${formatSom(effectiveIncrement)}${incrementInput > 0 ? "" : " (avtomatik)"} · ${
                 reservePrice > 0 ? `zaxira ${formatSom(reservePrice)}` : "zaxira narxsiz"
-              }`
-            : "Minimal qadam va zaxira narx"
+              }${buyNowPrice > 0 ? ` · hoziroq sotib olish ${formatSom(buyNowPrice)}` : ""}`
+            : "Minimal qadam, zaxira narx, hoziroq sotib olish"
         }
         forceOpen={advancedHasError}
       >
@@ -859,6 +873,29 @@ function SellForm() {
               ? "Zaxira narx boshlangʻich narxdan past boʻlishi mumkin emas."
               : errors.reserve_price?.message}
           </FieldError>
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="buy_now_price">Hoziroq sotib olish narxi</FieldLabel>
+          <Controller
+            control={control}
+            name="buy_now_price"
+            render={({ field }) => (
+              <PriceInput
+                id="buy_now_price"
+                placeholder="Yoʻq"
+                aria-invalid={buyNowIssue || errors.buy_now_price ? true : undefined}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+          <FieldDescription>
+            Xaridor kutmasdan shu narxda darhol sotib olishi mumkin. Birinchi taklif tushishi bilan
+            bu imkoniyat yopiladi va oddiy auksion davom etadi.
+          </FieldDescription>
+          <FieldError>{buyNowIssue ?? errors.buy_now_price?.message}</FieldError>
         </Field>
       </CollapsibleSection>
 

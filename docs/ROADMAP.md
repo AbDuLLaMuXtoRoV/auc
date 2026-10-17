@@ -101,6 +101,7 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 | **Handover** | ✅ Kod bilan tasdiq oqimi (`handover_service`), kod yashirin, tasdiq -> capture |
 | **Xabarnomalar** | ✅ In-app (`notification_service`), OUTBID/WON/SOLD eventlarga ulangan. SMS/push — TODO |
 | **Anti-fraud** | ✅ Signal tahlili (`fraud_service`): bir device/IP ko'p akkaunt, shill overlap, velocity. `bids.ip/device_id`. Admin endpoint |
+| **Auksion qulayliklari** | ✅ Buy-now (birinchi taklifgacha), sotilmagan lotni qayta joylash, "tugashiga oz qoldi" eslatmasi (`docs/AUCTION_ENGINE.md` §9) |
 | **Nizolar** | ✅ Dispute oqimi (`dispute_service`): xaridor ochadi, admin capture/release. Auto-complete ochiq nizoda to'xtaydi |
 | **Observability** | ✅ Strukturaviy JSON logging + `request_id` middleware |
 | Mobil | Mobil klient (API allaqachon shunga mo'ljallangan) |

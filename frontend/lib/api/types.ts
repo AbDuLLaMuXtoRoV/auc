@@ -116,6 +116,8 @@ export interface Item {
   /** Rezerv narx BORLIGI. Qiymatning o'zi javobda hech qachon kelmaydi. */
   has_reserve: boolean;
   item_images: ItemImage[];
+  /** Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si. */
+  relisted_from_id: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +152,10 @@ export interface Auction {
   closed_at: string | null;
   /** RESERVE_NOT_MET bo'lganda sotuvchining "eng yuqori taklifga sotish" muddati. */
   second_chance_expires_at: string | null;
+  /** tiyin (string) — "hoziroq sotib olish" narxi; null = o'chiq. */
+  buy_now_price: string | null;
+  /** Buy-now hozir mumkinmi (faol va hali taklif tushmagan). Server hisoblaydi. */
+  buy_now_available: boolean;
   created_at: string;
   updated_at: string;
 }
