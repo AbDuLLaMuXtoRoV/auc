@@ -106,7 +106,7 @@ app/
   tasks/                  # Celery vazifalari (scheduled, notifications, email, dispatch)
 alembic/versions/         # 19 migratsiya
 tests/                    # 55 fayl, 305 test
-scripts/                  # create_superadmin.py, seed_regions.py
+scripts/                  # create_superadmin.py, seed_regions.py, seed_price_guide.py
 frontend/                 # Next.js 16 ilovasi (23 sahifa, 68 komponent)
 docs/                     # ARCHITECTURE, DOMAIN, AUCTION_ENGINE, PAYMENTS, DESIGN, ROADMAP
 ```
@@ -859,6 +859,7 @@ alembic upgrade head
 
 # 3. Hududlarni yuklash (idempotent)
 python scripts/seed_regions.py
+python scripts/seed_price_guide.py   # telefon narx ko'rsatkichi (docs/PRICE_GUIDE.md)
 
 # 4. Birinchi superadmin
 python scripts/create_superadmin.py --email admin@bazart.uz --password '...'

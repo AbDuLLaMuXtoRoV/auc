@@ -45,6 +45,8 @@ import {
 } from "@/components/region/region-select"
 import { ImageDropzone, type PickedImage } from "@/components/seller/sell/image-dropzone"
 import { PriceInput } from "@/components/seller/sell/price-input"
+import { DevicePicker, EMPTY_DEVICE } from "@/components/seller/sell/device-picker"
+import { DEFECTS, GRADES, GRADE_INFO } from "@/lib/device"
 import { EquipmentChips } from "@/components/seller/sell/equipment-chips"
 import { CollapsibleSection } from "@/components/seller/sell/collapsible-section"
 import { ListingPreview, type PreviewData } from "@/components/seller/sell/listing-preview"
@@ -104,6 +106,15 @@ const schema = z
     reserve_price: z.number().int().nonnegative(),
     /** 0 — "hoziroq sotib olish" o'chiq. */
     buy_now_price: z.number().int().nonnegative(),
+    /** Telefon tavsifi — faqat "telefonlar" kategoriyasida yuboriladi. */
+    device: z.object({
+      model_id: z.string(),
+      model_name: z.string(),
+      storage: z.string(),
+      grade: z.enum(["", ...GRADES]),
+      battery: z.number().int().min(0).max(100),
+      defects: z.array(z.enum(DEFECTS)),
+    }),
   })
   .superRefine((v, ctx) => {
     // Yangi tovarda nuqson bo'lmaydi; boshqa holatda — yo belgi, yo tavsif.
@@ -120,6 +131,9 @@ const schema = z
         path: ["reserve_price"],
         message: "Zaxira narx boshlangʻich narxdan past boʻlishi mumkin emas.",
       })
+    }
+    if (v.device.model_id && !v.device.storage) {
+      ctx.addIssue({ code: "custom", path: ["device"], message: "Xotira hajmini tanlang." })
     }
     const buyNowIssue = buyNowError(v.buy_now_price, v.starting_price, v.reserve_price)
     if (buyNowIssue) {
@@ -147,6 +161,7 @@ const DEFAULTS: FormValues = {
   minimum_bid_increment: 0,
   reserve_price: 0,
   buy_now_price: 0,
+  device: EMPTY_DEVICE,
 }
 
 type Draft = { values: FormValues; categoryTouched: boolean }
@@ -243,6 +258,8 @@ function SellForm() {
 
   const category = categories?.find((c) => String(c.id) === categoryId)
   const profile = categoryProfile(category?.slug)
+  // Telefon holati/baho bo'limi — narx ko'rsatkichi faqat telefonlar uchun.
+  const isPhone = category?.slug === "telefonlar"
   const autoIncrement = autoIncrementSoum(startingPrice)
   const effectiveIncrement = incrementInput > 0 ? incrementInput : autoIncrement
   const endsAt = now != null ? formatEndsAt(now, Number(durationDays)) : null
@@ -299,7 +316,8 @@ function SellForm() {
   // Har o'zgarishda qoralamani saqlash (kechiktirilgan).
   const allValues = useWatch({ control })
   React.useEffect(() => {
-    if (hasContent(allValues)) {
+    // useWatch chuqur-qisman tip beradi; qoralama baribir DEFAULTS ustiga yoziladi.
+    if (hasContent(allValues as Partial<FormValues>)) {
       draft.save({ values: { ...DEFAULTS, ...allValues } as FormValues, categoryTouched })
     } else {
       draft.clear()
@@ -384,6 +402,15 @@ function SellForm() {
           district_id: values.district_id ? Number(values.district_id) : undefined,
           starting_price: startingTiyin,
           reserve_price: reserveTiyin,
+          ...(isPhone && values.device.model_id && values.device.storage
+            ? {
+                device_model_id: Number(values.device.model_id),
+                device_storage: values.device.storage,
+                device_grade: values.device.grade || undefined,
+                battery_health: values.device.battery > 0 ? values.device.battery : undefined,
+                device_defects: values.device.defects,
+              }
+            : {}),
         })
         createdItemId.current = item.id
       }
@@ -461,6 +488,17 @@ function SellForm() {
       incrementIsAuto: values.minimum_bid_increment === 0,
       reserveSoum: values.reserve_price,
       buyNowSoum: values.buy_now_price,
+      deviceSummary:
+        isPhone && values.device.model_id && values.device.storage
+          ? [
+              values.device.model_name,
+              values.device.storage,
+              values.device.grade ? `${GRADE_INFO[values.device.grade].short} daraja` : null,
+              values.device.battery > 0 ? `batareya ${values.device.battery}%` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : undefined,
       durationDays: Number(values.duration_days),
       endsAt,
       place: placeText,
@@ -640,6 +678,26 @@ function SellForm() {
         <FieldDescription id="description-hint">Nimalarni yozish kerak: {profile.descriptionHint}</FieldDescription>
         <FieldError>{errors.description?.message}</FieldError>
       </Field>
+
+      {isPhone && (
+        <Field>
+          <Controller
+            control={control}
+            name="device"
+            render={({ field }) => (
+              <DevicePicker
+                value={field.value}
+                onChange={field.onChange}
+                title={title}
+                onApplyPrice={(soum) =>
+                  setValue("starting_price", soum, { shouldValidate: true, shouldDirty: true })
+                }
+              />
+            )}
+          />
+          <FieldError>{errors.device?.message}</FieldError>
+        </Field>
+      )}
 
       {condition !== "new" && (
         <Field>

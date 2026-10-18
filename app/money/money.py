@@ -40,6 +40,28 @@ def soum_to_tiyin(value: Decimal | int | str) -> Tiyin:
     return int(tiyin)
 
 
+def convert_foreign_to_tiyin(
+    amount: int,
+    rate_tiyin_per_unit: int,
+    adjust_bps: int = 0,
+    step_tiyin: Tiyin = 1_000 * TIYIN_PER_SOUM,
+) -> Tiyin:
+    """Xorijiy valyutadagi BUTUN summani tiyinga o'giradi (narx ko'rsatkichi uchun).
+
+    `rate_tiyin_per_unit` — 1 birlik (masalan 1 won) necha tiyin: 8.55 so'm -> 855.
+    `adjust_bps` — bozor tuzatmasi (+1500 = +15%, manfiy ham bo'lishi mumkin).
+    Natija `step_tiyin` ga PASTGA yaxlitlanadi (default 1 000 so'm): bu taxminiy
+    baho, uni oshirib ko'rsatish xaridorni ham, sotuvchini ham chalg'itadi.
+    Butun son bo'linmasi — float ishtirok etmaydi.
+    """
+    if amount < 0 or rate_tiyin_per_unit < 0:
+        raise ValueError("Summa va kurs manfiy bo'lishi mumkin emas")
+    if adjust_bps <= -_BPS_DIVISOR:
+        raise ValueError("Bozor tuzatmasi -100% yoki undan past bo'lishi mumkin emas")
+    raw = amount * rate_tiyin_per_unit * (_BPS_DIVISOR + adjust_bps) // _BPS_DIVISOR
+    return raw - raw % step_tiyin
+
+
 def tiyin_to_soum(value: Tiyin) -> Decimal:
     """Tiyinni so'mga o'giradi (ko'rsatish uchun): 6_200_050 -> Decimal('62000.50').
 

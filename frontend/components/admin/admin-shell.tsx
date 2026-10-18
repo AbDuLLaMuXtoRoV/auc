@@ -14,6 +14,7 @@ import {
   ShieldAlertIcon,
   FlagIcon,
   HandCoinsIcon,
+  TagsIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/admin/bids", label: "Takliflar", icon: HandCoinsIcon, exact: false },
   { href: "/admin/orders", label: "Buyurtmalar", icon: ReceiptTextIcon, exact: false },
   { href: "/admin/complaints", label: "Shikoyatlar", icon: FlagIcon, exact: false },
+  { href: "/admin/price-guide", label: "Telefon narxlari", icon: TagsIcon, exact: false },
 ] as const
 
 function NavTabs() {

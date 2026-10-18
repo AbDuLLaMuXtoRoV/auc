@@ -94,9 +94,14 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
    - gradient matnlar, gradient tugmalar, glassmorphism, keraksiz blur;
    - har bo'limda `01/02/03` raqamli markerlar;
    - "Lorem ipsum" — barcha kontent real mahsulot nomlari, narxlar va tavsiflar bilan yoziladi.
-3. **Rang tizimi:** neytral asos (iliq oq fon `#F7F6F4`, to'q matn `#1B1A18`) + **bitta** brend
-   aksenti — **majolika ko'ki `#12659E`** (`--brand`/`--primary`; sovuq ko'k tovar fotolari bilan
-   raqobatlashmaydi) + semantik ranglar (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`).
+3. **Rang tizimi — "lajuvard bloklar, siyoh tugmalar":** iliq qog'oz fon `#F4F2EE`, oq sirt,
+   siyoh matn `#1B1A18`. Brend = **lajuvard** `#1F4E9D` (`--brand`, och fon `--brand-soft #E6EBF5`)
+   — KATTA bloklarda ishlatiladi (bosh banner, kategoriya plitkalari, foto o'rni, faol tab), kichik
+   tugmalarda emas. Asosiy tugmalar — **siyoh** (`--primary #1B1A18`). Semantik ranglar faqat holat
+   uchun (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`). Matn havolalari — siyoh +
+   doimiy yumshoq tagchiziq. Shakllar: `--radius` 14px, tugma/chip/qidiruv `rounded-full`;
+   bo'lim sarlavhalari — qalin, BOSH HARF (`SectionHeading`); mahsulot kartasi — plitka + chegarali
+   teg, quti emas.
    Hammasi `app/globals.css` da CSS token sifatida e'lon qilinadi (batafsil: `docs/DESIGN.md`).
    **Komponentlarda hardcode rang TAQIQ** — faqat token orqali (`bg-primary`, `text-muted-foreground`,
    `text-success` …). warning'ga oq matn qo'yilmaydi — quyuq matn (`--warning-foreground`).
@@ -146,7 +151,8 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - `datetime.now(UTC)` — naive datetime TAQIQ.
 - **Pul: har doim `Tiyin` (butun son)**. `Decimal`/`float` TAQIQ. Hisob-kitob faqat `app/money/`
   orqali. Sxemada `TiyinAmount` turi ishlatiladi (`app/money/fields.py`) — u JSON'ga string yozadi.
-  Yaxlitlash faqat `calc_buyer_premium` ichida; boshqa joyda takrorlanmaydi.
+  Yaxlitlash faqat `app/money/` ichida: `calc_buyer_premium` va valyuta o'girish
+  (`convert_foreign_to_tiyin`, narx ko'rsatkichi uchun); boshqa joyda takrorlanmaydi.
 
 ## Test qoidalari
 
@@ -191,3 +197,4 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 | `docs/PAYMENTS.md` | Escrow, PSP adapter, idempotentlik, webhook imzo, audit log, huquq |
 | `docs/ROADMAP.md` | Fazalar A→D va keyingilari, bajarilganlar belgilangan |
 | `docs/DESIGN.md` | Frontend dizayn tizimi: palitra (hex+kontrast), shrift, layout, imzo element |
+| `docs/PRICE_GUIDE.md` | Telefon narx ko'rsatkichi: manba (KRW), o'girish, baho qoidalari, API |

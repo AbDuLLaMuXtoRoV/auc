@@ -2,8 +2,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from app.models.enums import ItemCondition, ItemStatus
+from app.models.enums import DeviceDefect, DeviceGrade, ItemCondition, ItemStatus
 from app.money.fields import TiyinAmount
+from app.schemas.price_guide import DeviceModelBrief
 
 
 class ItemImageRead(BaseModel):
@@ -37,6 +38,12 @@ class ItemCreate(BaseModel):
     # Pul tiyinda, JSON'da string: {"starting_price": "6200050"}
     starting_price: TiyinAmount = Field(gt=0)
     reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    # Telefon tavsifi (ixtiyoriy) — narx ko'rsatkichi modeli bilan.
+    device_model_id: int | None = None
+    device_storage: str | None = Field(default=None, max_length=10)
+    device_grade: DeviceGrade | None = None
+    battery_health: int | None = Field(default=None, ge=1, le=100)
+    device_defects: list[DeviceDefect] = Field(default_factory=list, max_length=len(DeviceDefect))
 
 
 class ItemUpdate(BaseModel):
@@ -56,6 +63,12 @@ class ItemUpdate(BaseModel):
     district_id: int | None = None
     starting_price: TiyinAmount | None = Field(default=None, gt=0)
     reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    # Telefon tavsifi (ixtiyoriy) — narx ko'rsatkichi modeli bilan.
+    device_model_id: int | None = None
+    device_storage: str | None = Field(default=None, max_length=10)
+    device_grade: DeviceGrade | None = None
+    battery_health: int | None = Field(default=None, ge=1, le=100)
+    device_defects: list[DeviceDefect] | None = Field(default=None, max_length=len(DeviceDefect))
 
 
 class ItemRead(BaseModel):
@@ -87,6 +100,12 @@ class ItemRead(BaseModel):
     item_images: list[ItemImageRead] = Field(default_factory=list)
     # Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si.
     relisted_from_id: int | None = None
+    device_model_id: int | None = None
+    device_model: DeviceModelBrief | None = None
+    device_storage: str | None = None
+    device_grade: DeviceGrade | None = None
+    battery_health: int | None = None
+    device_defects: list[DeviceDefect] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

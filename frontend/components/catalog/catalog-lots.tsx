@@ -298,7 +298,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="min-w-0 break-words text-xl font-semibold text-foreground">{label}</h1>
+          <h1 className="min-w-0 break-words font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">{label}</h1>
           <span className="text-sm tabular-nums text-muted-foreground">
             {loading ? "…" : `${results.length} ta`}
           </span>
@@ -306,7 +306,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
             <button
               type="button"
               onClick={() => update({ q: null })}
-              className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
             >
               <XIcon className="size-3.5" aria-hidden="true" />
               Qidiruvni tozalash
@@ -403,7 +403,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
           <button
             type="button"
             onClick={() => update({ cond: null, min: null, max: null, region: null, district: null })}
-            className="rounded-md px-2 py-1 text-xs font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="rounded-md px-2 py-1 text-xs font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
           >
             Tozalash
           </button>

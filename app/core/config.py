@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     ending_soon_lead_minutes: int = 60
     ending_soon_interval_seconds: int = 60
 
+    # Telefon narx ko'rsatkichi: admin hali sozlamani saqlamagan bo'lsa ishlatiladigan
+    # boshlang'ich qiymatlar. 1 won = 8.55 so'm (Wise mid-market, 2026-avgust) -> 855 tiyin.
+    price_guide_default_rate_tiyin_per_krw: int = 855
+    price_guide_default_market_adjust_bps: int = 0
+
     # Dinamik (darajali) minimal stavka qadami poli. Prod'da yoqiq: narxga
     # qarab qadam avtomatik oshadi (5 000 so'mdan boshlab). Test muhitida
     # conftest uni o'chiradi — kichik-summali mavjud test korpusi buzilmasin;

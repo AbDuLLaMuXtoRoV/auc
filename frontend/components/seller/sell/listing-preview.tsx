@@ -21,6 +21,8 @@ export type PreviewData = {
   reserveSoum: number
   /** 0 — "hoziroq sotib olish" o'chiq. */
   buyNowSoum: number
+  /** "iPhone 13 Pro · 256GB · A- daraja · batareya 91%" — telefon bo'lsa. */
+  deviceSummary?: string
   durationDays: number
   endsAt: string | null
   place: string
@@ -121,6 +123,7 @@ function ListingPreview({
       </div>
 
       <dl className="rounded-xl border border-border bg-card px-4">
+        {data.deviceSummary && <Row label="Qurilma">{data.deviceSummary}</Row>}
         {data.description && <Row label="Tavsif">{data.description}</Row>}
         {data.defects && <Row label="Nuqsonlar">{data.defects}</Row>}
         {data.year && <Row label="Ishlab chiqarilgan yili">{data.year}</Row>}

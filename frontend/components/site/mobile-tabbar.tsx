@@ -9,6 +9,7 @@ import {
   PackageIcon,
   LogInIcon,
   HeartIcon,
+  TagsIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -20,6 +21,7 @@ type Tab = { href: string; label: string; icon: LucideIcon; match: string }
 const ANON: Tab[] = [
   { href: "/", label: "Bosh sahifa", icon: HouseIcon, match: "/" },
   { href: "/catalog/hammasi", label: "Katalog", icon: LayoutGridIcon, match: "/catalog" },
+  { href: "/narxlar", label: "Narxlar", icon: TagsIcon, match: "/narxlar" },
   { href: "/login", label: "Kirish", icon: LogInIcon, match: "/login" },
 ]
 
@@ -57,11 +59,18 @@ function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-1 py-2 text-center text-xs outline-none transition-colors focus-visible:bg-muted",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "group flex flex-col items-center gap-1 px-1 pt-2 pb-2.5 text-center text-xs outline-none transition-colors duration-150 focus-visible:bg-muted",
+                  active ? "font-semibold text-brand" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="size-5" aria-hidden="true" />
+                <span
+                  className={cn(
+                    "grid h-7 w-12 place-items-center rounded-full transition-colors duration-150",
+                    active ? "bg-brand-soft" : "group-hover:bg-muted"
+                  )}
+                >
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
                 {tab.label}
               </Link>
             </li>

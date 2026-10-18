@@ -8,6 +8,7 @@ import { formatNumber, formatTiyin } from "@/lib/format"
 import type { Auction, Item, ItemCondition } from "@/lib/api/types"
 import { listRegions, listDistricts } from "@/lib/api/regions"
 import { NO_DEFECTS_TEXT } from "@/lib/listing"
+import { DEFECT_LABEL, GRADE_INFO } from "@/lib/device"
 
 export const CONDITION_LABEL: Record<ItemCondition, string> = {
   new: "Yangi",
@@ -58,6 +59,28 @@ function LotSpecs({ item, auction }: { item: Item; auction: Auction }) {
 
   const specs: Spec[] = [
     { label: "Holati", value: CONDITION_LABEL[item.condition] },
+    ...(item.device_model ? [{ label: "Model", value: item.device_model.name }] : []),
+    ...(item.device_storage ? [{ label: "Xotira", value: item.device_storage }] : []),
+    ...(item.device_grade
+      ? [
+          {
+            label: "Tashqi holat",
+            value: `${GRADE_INFO[item.device_grade].short} — ${GRADE_INFO[item.device_grade].label}. ${GRADE_INFO[item.device_grade].description}`,
+          },
+        ]
+      : []),
+    ...(item.battery_health != null
+      ? [{ label: "Batareya holati", value: `${item.battery_health}%` }]
+      : []),
+    ...(item.device_defects.length > 0
+      ? [
+          {
+            label: "Nosozliklar",
+            value: item.device_defects.map((d) => DEFECT_LABEL[d]).join("\n"),
+            tone: "notice" as const,
+          },
+        ]
+      : []),
     ...(item.year != null ? [{ label: "Ishlab chiqarilgan yili", value: String(item.year) }] : []),
     ...(item.equipment?.trim() ? [{ label: "Komplektatsiya", value: item.equipment }] : []),
     ...(item.defects?.trim()
@@ -121,7 +144,7 @@ function LotSpecs({ item, auction }: { item: Item; auction: Auction }) {
           href={videoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 outline-none transition-colors underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ExternalLinkIcon className="size-4" aria-hidden="true" />
           Videoni koʻrish

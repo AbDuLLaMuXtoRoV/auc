@@ -86,7 +86,7 @@ function RelistDialog({
     } catch (e) {
       setError(
         e instanceof ApiError && e.status === 409
-          ? "Bu lot allaqachon qayta joylangan yoki sotilgan."
+          ? "Bu mahsulot allaqachon qayta joylangan yoki sotilgan."
           : e instanceof ApiError
             ? e.detail
             : "Qayta joylab boʻlmadi. Qayta urinib koʻring."
@@ -100,7 +100,7 @@ function RelistDialog({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Lotni qayta joylash"
+      title="Mahsulotni qayta joylash"
       description={
         <>
           <span className="font-medium text-foreground">{item.title}</span> yangi auksion sifatida
@@ -126,7 +126,7 @@ function RelistDialog({
           <FieldDescription>
             {hadBids
               ? `Tavsiya — eng yuqori taklif (${formatTiyin(auction.current_price)}). Xaridorlar shu narxni allaqachon taklif qilgan.`
-              : `Avvalgi narx ${formatTiyin(auction.starting_price)} edi. Taklif tushmagan — narxni pasaytirish lotni tezroq sotadi.`}
+              : `Avvalgi narx ${formatTiyin(auction.starting_price)} edi. Taklif tushmagan — narxni pasaytirish mahsulotni tezroq sotadi.`}
           </FieldDescription>
         </Field>
 

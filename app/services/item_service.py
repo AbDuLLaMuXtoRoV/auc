@@ -9,6 +9,7 @@ from app.repositories.item_repository import ItemRepository
 from app.repositories.region_repository import RegionRepository
 from app.schemas.item import ItemCreate, ItemUpdate
 from app.services.auction_service import AuctionService
+from app.services.price_guide_service import PriceGuideService
 from app.services.storage_service import StorageService
 
 
@@ -21,6 +22,7 @@ class ItemService:
 
     def create_item(self, seller: User, payload: ItemCreate) -> Item:
         self._validate_location(payload.region_id, payload.district_id)
+        PriceGuideService(self.db).validate_device(payload.device_model_id, payload.device_storage)
         return self.repository.create(seller, payload)
 
     def get_item_or_404(self, item_id: int) -> Item:
@@ -37,6 +39,9 @@ class ItemService:
         region_id = payload.region_id if "region_id" in fields else item.region_id
         district_id = payload.district_id if "district_id" in fields else item.district_id
         self._validate_location(region_id, district_id)
+        model_id = payload.device_model_id if "device_model_id" in fields else item.device_model_id
+        storage = payload.device_storage if "device_storage" in fields else item.device_storage
+        PriceGuideService(self.db).validate_device(model_id, storage)
         return self.repository.update(item, payload)
 
     def cancel_item(self, item_id: int, actor: User) -> Item:

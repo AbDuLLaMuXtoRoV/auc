@@ -201,7 +201,7 @@ class AuctionService:
             notifier.create(
                 user_id=buyer.id,
                 type=NotificationType.WON,
-                title="Lotni sotib oldingiz",
+                title="Mahsulotni sotib oldingiz",
                 body="Mahsulot «hoziroq sotib olish» narxida sizniki. To'lovni amalga oshiring.",
                 payload={"auction_id": auction.id, "final_price": str(price)},
             )
@@ -209,7 +209,7 @@ class AuctionService:
                 user_id=auction.seller_id,
                 type=NotificationType.SOLD,
                 title="Mahsulotingiz sotildi",
-                body="Xaridor lotni «hoziroq sotib olish» narxida sotib oldi.",
+                body="Xaridor mahsulotni «hoziroq sotib olish» narxida sotib oldi.",
                 payload={"auction_id": auction.id, "final_price": str(price)},
             )
             self.db.commit()

@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     notifications,
     orders,
     payments,
+    price_guide,
     regions,
     reviews,
     users,
@@ -42,6 +43,7 @@ api_router.include_router(regions.router, prefix="/regions", tags=["regions"])
 api_router.include_router(watchlist.router, prefix="/watchlist", tags=["watchlist"])
 api_router.include_router(complaints.router, prefix="/complaints", tags=["complaints"])
 api_router.include_router(legal.router, prefix="/legal", tags=["legal"])
+api_router.include_router(price_guide.router, prefix="/price-guide", tags=["price-guide"])
 api_router.include_router(ws.router, tags=["ws"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 

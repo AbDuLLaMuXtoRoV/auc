@@ -7,6 +7,36 @@ class ItemCondition(StrEnum):
     REFURBISHED = "refurbished"
 
 
+class DeviceGrade(StrEnum):
+    """Telefon tashqi holati darajasi (narx ko'rsatkichi jadvali bo'yicha).
+
+    A  — tirnalish, urilish, kamera shikasti, ekranda iz yo'q
+    A- — mayda tirnalishlar, urilish yo'q
+    B+ — ekranda mayda tirnalish, chetida 1-2 ta yengil urilish
+    B- — ekranda yengil tirnalishlar, chetida 2-3 ta yengil urilish
+    """
+
+    A = "a"
+    A_MINUS = "a_minus"
+    B_PLUS = "b_plus"
+    B_MINUS = "b_minus"
+
+
+class DeviceDefect(StrEnum):
+    """Narxdan ajratma beradigan nosozliklar (narx ko'rsatkichi jadvali ustunlari)."""
+
+    SCREEN_BROKEN = "screen_broken"  # ekran singan (oyna)
+    LCD = "lcd"  # displey (LCD/OLED) nosoz
+    FACE_ID = "face_id"  # Face ID / Touch ID ishlamaydi
+    CAMERA = "camera"
+    WIFI = "wifi"  # Wi-Fi / kompas
+    MIC = "mic"  # mikrofon / yozish ishlamaydi
+    BACK_GLASS = "back_glass"  # orqa oyna singan
+    TRUE_TONE = "true_tone"
+    GENUINE_PARTS = "genuine_parts"  # "original qism" (almashtirilgan qism) xabari
+    NONGENUINE_PARTS = "nongenuine_parts"  # "original bo'lmagan qism" xabari
+
+
 class ItemStatus(StrEnum):
     DRAFT = "draft"
     SCHEDULED = "scheduled"

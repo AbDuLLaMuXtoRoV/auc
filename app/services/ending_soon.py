@@ -67,7 +67,7 @@ def _notify_auction(db: Session, auction: Auction) -> None:
     if not recipients:
         return
 
-    title_text = auction.item.title if auction.item else "Lot"
+    title_text = auction.item.title if auction.item else "Mahsulot"
     price = f"{format_soum(auction.current_price)} soʻm"
     notifier = NotificationService(db)
     for user_id in sorted(recipients):

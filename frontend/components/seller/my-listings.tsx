@@ -153,12 +153,12 @@ function ListingCard({
       const updated = await cancelListing(item.id)
       onCancelled(updated)
       setConfirmOpen(false)
-      toast.success("Lot bekor qilindi.")
+      toast.success("Mahsulot bekor qilindi.")
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        setCancelError("Lotga taklif tushgan yoki auksion yakunlangan — endi bekor qilib boʻlmaydi.")
+        setCancelError("Mahsulotga taklif tushgan yoki auksion yakunlangan — endi bekor qilib boʻlmaydi.")
       } else {
-        setCancelError(e instanceof ApiError ? e.detail : "Lotni bekor qilib boʻlmadi.")
+        setCancelError(e instanceof ApiError ? e.detail : "Mahsulotni bekor qilib boʻlmadi.")
       }
     } finally {
       setCancelling(false)
@@ -221,7 +221,7 @@ function ListingCard({
       </div>
       {canCancel && hasBids && (
         <p className="text-xs text-muted-foreground">
-          Lotga taklif tushgan — uni endi bekor qilib boʻlmaydi. Auksion muddati tugaguncha davom
+          Mahsulotga taklif tushgan — uni endi bekor qilib boʻlmaydi. Auksion muddati tugaguncha davom
           etadi.
         </p>
       )}
@@ -229,7 +229,7 @@ function ListingCard({
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Lotni bekor qilasizmi?"
+        title="Mahsulotni bekor qilasizmi?"
         description={
           <>
             <span className="font-medium text-foreground">{item.title}</span> katalogdan olib
@@ -340,7 +340,7 @@ function MyListings() {
   }, [status, sellerId, reloadKey])
 
   const handleRelisted = React.useCallback(() => {
-    toast.success("Lot qayta joylandi — yangi auksion boshlandi.")
+    toast.success("Mahsulot qayta joylandi — yangi auksion boshlandi.")
     setReloadKey((k) => k + 1)
   }, [])
 
@@ -361,7 +361,7 @@ function MyListings() {
   if (status !== "authenticated") {
     return (
       <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
-        <p className="text-base font-medium text-foreground">Lotlaringizni koʻrish uchun kiring</p>
+        <p className="text-base font-medium text-foreground">Mahsulotlaringizni koʻrish uchun kiring</p>
         <Button asChild size="lg">
           <Link href={`/login?next=${encodeURIComponent(pathname)}`}>Kirish</Link>
         </Button>

@@ -6,6 +6,28 @@
 
 export type ItemCondition = "new" | "used" | "refurbished";
 
+/** Telefon tashqi holati darajasi (narx ko'rsatkichi bo'yicha). */
+export type DeviceGrade = "a" | "a_minus" | "b_plus" | "b_minus";
+
+/** Narxdan ajratma beradigan nosozliklar. */
+export type DeviceDefect =
+  | "screen_broken"
+  | "lcd"
+  | "face_id"
+  | "camera"
+  | "wifi"
+  | "mic"
+  | "back_glass"
+  | "true_tone"
+  | "genuine_parts"
+  | "nongenuine_parts";
+
+export interface DeviceModelBrief {
+  id: number;
+  slug: string;
+  name: string;
+}
+
 export type ItemStatus =
   | "draft"
   | "scheduled"
@@ -118,6 +140,14 @@ export interface Item {
   item_images: ItemImage[];
   /** Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si. */
   relisted_from_id: number | null;
+  /** Telefon tavsifi (ixtiyoriy) — narx ko'rsatkichi modeli. */
+  device_model_id: number | null;
+  device_model: DeviceModelBrief | null;
+  device_storage: string | null;
+  device_grade: DeviceGrade | null;
+  /** Batareya holati, % */
+  battery_health: number | null;
+  device_defects: DeviceDefect[];
   created_at: string;
   updated_at: string;
 }

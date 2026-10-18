@@ -175,12 +175,12 @@ function BidPanel({
       }
       await buyNow(auction.id)
       setBuyOpen(false)
-      toast.success("Lot sizniki! Endi toʻlovni amalga oshiring.")
+      toast.success("Mahsulot sizniki! Endi toʻlovni amalga oshiring.")
       onBid()
       router.push("/orders")
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        setBuyError("Kechikdingiz — lotga taklif tushdi yoki u allaqachon sotildi.")
+        setBuyError("Kechikdingiz — mahsulotga taklif tushdi yoki u allaqachon sotildi.")
         onBid()
       } else {
         setBuyError(e instanceof ApiError ? e.detail : "Sotib olib boʻlmadi. Qayta urinib koʻring.")

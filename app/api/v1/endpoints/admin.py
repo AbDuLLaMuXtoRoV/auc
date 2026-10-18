@@ -14,8 +14,10 @@ from app.schemas.auction import AuctionRead
 from app.schemas.bid import BidRead
 from app.schemas.item import ItemRead
 from app.schemas.order import OrderRead
+from app.schemas.price_guide import PriceGuideInfo, PriceGuideSettingsUpdate
 from app.schemas.user import UserRead
 from app.services.admin_service import AdminService
+from app.services.price_guide_service import PriceGuideService
 
 router = APIRouter()
 
@@ -172,3 +174,16 @@ def admin_read_listings_alias(
     limit: LimitQuery = 100,
 ) -> list[Item]:
     return AdminService(db).list_items(skip=skip, limit=limit)
+
+
+@router.get("/price-guide/settings", response_model=PriceGuideInfo)
+def admin_price_guide_settings(_admin: AdminUser, db: DbSession) -> PriceGuideInfo:
+    return PriceGuideService(db).info()
+
+
+@router.put("/price-guide/settings", response_model=PriceGuideInfo)
+def admin_update_price_guide_settings(
+    payload: PriceGuideSettingsUpdate, admin: AdminUser, db: DbSession
+) -> PriceGuideInfo:
+    """Won -> so'm kursi va bozor tuzatmasi. Barcha narxlar darhol qayta hisoblanadi."""
+    return PriceGuideService(db).update_settings(admin, payload)

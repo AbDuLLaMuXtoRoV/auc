@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import JSON, BigInteger, ForeignKey, SmallInteger, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.enums import ItemCondition, ItemStatus
+from app.models.enums import DeviceGrade, ItemCondition, ItemStatus
 from app.money import Tiyin
 
 
@@ -53,6 +53,19 @@ class Item(Base):
     relisted_from_id: Mapped[int | None] = mapped_column(
         ForeignKey("items.id", name="fk_items_relisted_from_id_items"), nullable=True
     )
+    # Telefon tavsifi (ixtiyoriy) — narx ko'rsatkichi modeli bilan bog'lanadi.
+    # Shular bo'yicha kartochkada daraja/xotira/batareya ko'rsatiladi va lot
+    # sahifasida taxminiy bozor bahosi hisoblanadi.
+    device_model_id: Mapped[int | None] = mapped_column(
+        ForeignKey("device_models.id"), index=True, nullable=True
+    )
+    device_storage: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    device_grade: Mapped[DeviceGrade | None] = mapped_column(
+        SqlEnum(DeviceGrade, name="device_grade"), nullable=True
+    )
+    battery_health: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)  # %
+    # DeviceDefect qiymatlari ro'yxati (["lcd", "camera"]).
+    device_defects: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),
@@ -61,6 +74,7 @@ class Item(Base):
     )
 
     seller = relationship("User", back_populates="items")
+    device_model = relationship("DeviceModel")
     category = relationship("Category", back_populates="items")
     auction = relationship("Auction", back_populates="item", uselist=False)
     item_images = relationship(

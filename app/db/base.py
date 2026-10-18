@@ -13,6 +13,7 @@ from app.models.notification import Notification
 from app.models.order import Order
 from app.models.otp import OtpCode
 from app.models.payment import Payment, PaymentMethod
+from app.models.price_guide import DeviceModel, DevicePrice, PriceGuideSettings
 from app.models.region import District, Region
 from app.models.review import Review
 from app.models.user import User
@@ -27,6 +28,8 @@ __all__ = [
     "Category",
     "Complaint",
     "Conversation",
+    "DeviceModel",
+    "DevicePrice",
     "Dispute",
     "District",
     "Handover",
@@ -39,6 +42,7 @@ __all__ = [
     "OtpCode",
     "PaymentMethod",
     "Payment",
+    "PriceGuideSettings",
     "Region",
     "Review",
     "User",

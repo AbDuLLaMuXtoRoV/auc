@@ -1,0 +1,2198 @@
+{
+  "source": "Apple_Used_Price_List_EN.xlsx — PS Trading Company (Koreya) iPhone buy-back narxlari",
+  "currency": "KRW",
+  "grade_battery_min": {
+    "a": 90,
+    "a_minus": 90,
+    "b_plus": 85,
+    "b_minus": 81
+  },
+  "models": [
+    {
+      "brand": "Apple",
+      "name": "iPhone SE (2-avlod)",
+      "slug": "iphone-se-2-avlod",
+      "series": "SE",
+      "sort_order": 0,
+      "deductions_krw": {
+        "screen_broken": 0,
+        "lcd": 30000,
+        "lcd_uninspectable": null,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 10000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": null,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 10000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 110000,
+          "a_minus": 100000,
+          "b_plus": 90000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 60000
+        },
+        {
+          "storage": "128GB",
+          "a": 140000,
+          "a_minus": 130000,
+          "b_plus": 110000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 60000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone SE (3-avlod)",
+      "slug": "iphone-se-3-avlod",
+      "series": "SE",
+      "sort_order": 1,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 40000,
+        "lcd_uninspectable": null,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 10000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": null,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 10000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 170000,
+          "a_minus": 160000,
+          "b_plus": 150000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 95000
+        },
+        {
+          "storage": "128GB",
+          "a": 200000,
+          "a_minus": 190000,
+          "b_plus": 180000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 115000
+        },
+        {
+          "storage": "256GB",
+          "a": 200000,
+          "a_minus": 190000,
+          "b_plus": 180000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 115000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 6",
+      "slug": "iphone-6",
+      "series": "6",
+      "sort_order": 2,
+      "deductions_krw": {
+        "screen_broken": 0,
+        "lcd": 5000,
+        "lcd_uninspectable": null,
+        "face_id": 10000,
+        "camera": 0,
+        "wifi": 0,
+        "mic": 0,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 5000,
+      "prices": [
+        {
+          "storage": "16GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 10000
+        },
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 20000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 6 Plus",
+      "slug": "iphone-6-plus",
+      "series": "6",
+      "sort_order": 3,
+      "deductions_krw": {
+        "screen_broken": 0,
+        "lcd": 5000,
+        "lcd_uninspectable": null,
+        "face_id": 10000,
+        "camera": 0,
+        "wifi": 0,
+        "mic": 0,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 5000,
+      "prices": [
+        {
+          "storage": "16GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 15000
+        },
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 25000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 6s",
+      "slug": "iphone-6s",
+      "series": "6",
+      "sort_order": 4,
+      "deductions_krw": {
+        "screen_broken": 0,
+        "lcd": 10000,
+        "lcd_uninspectable": null,
+        "face_id": 10000,
+        "camera": 0,
+        "wifi": 0,
+        "mic": 0,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 5000,
+      "prices": [
+        {
+          "storage": "16GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 15000
+        },
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 25000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 6s Plus",
+      "slug": "iphone-6s-plus",
+      "series": "6",
+      "sort_order": 5,
+      "deductions_krw": {
+        "screen_broken": 0,
+        "lcd": 10000,
+        "lcd_uninspectable": null,
+        "face_id": 10000,
+        "camera": 5000,
+        "wifi": 0,
+        "mic": 0,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 5000,
+      "prices": [
+        {
+          "storage": "16GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 20000
+        },
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 30000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 7",
+      "slug": "iphone-7",
+      "series": "7",
+      "sort_order": 6,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 20000,
+        "lcd_uninspectable": null,
+        "face_id": 30000,
+        "camera": 10000,
+        "wifi": 0,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 10000,
+      "prices": [
+        {
+          "storage": "32GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 40000
+        },
+        {
+          "storage": "128GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 50000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 7 Plus",
+      "slug": "iphone-7-plus",
+      "series": "7",
+      "sort_order": 7,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 25000,
+        "lcd_uninspectable": null,
+        "face_id": 50000,
+        "camera": 50000,
+        "wifi": 0,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 10000,
+      "prices": [
+        {
+          "storage": "32GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 50000
+        },
+        {
+          "storage": "128GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 70000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 8",
+      "slug": "iphone-8",
+      "series": "8",
+      "sort_order": 8,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 20000,
+        "lcd_uninspectable": null,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 10000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 60000
+        },
+        {
+          "storage": "256GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 80000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 8 Plus",
+      "slug": "iphone-8-plus",
+      "series": "8",
+      "sort_order": 9,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 30000,
+        "lcd_uninspectable": null,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 10000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 65000
+        },
+        {
+          "storage": "256GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 75000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone X",
+      "slug": "iphone-x",
+      "series": "X",
+      "sort_order": 10,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 40000,
+        "lcd_uninspectable": 10000,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 30000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 70000
+        },
+        {
+          "storage": "256GB",
+          "a": null,
+          "a_minus": null,
+          "b_plus": null,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 80000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone XR",
+      "slug": "iphone-xr",
+      "series": "X",
+      "sort_order": 11,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 30000,
+        "lcd_uninspectable": 10000,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 30000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 160000,
+          "a_minus": 140000,
+          "b_plus": 120000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 100000
+        },
+        {
+          "storage": "128GB",
+          "a": 200000,
+          "a_minus": 180000,
+          "b_plus": 150000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 110000
+        },
+        {
+          "storage": "256GB",
+          "a": 210000,
+          "a_minus": 190000,
+          "b_plus": 160000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 110000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone XS",
+      "slug": "iphone-xs",
+      "series": "X",
+      "sort_order": 12,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 45000,
+        "lcd_uninspectable": 10000,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 30000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 180000,
+          "a_minus": 160000,
+          "b_plus": 140000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 80000
+        },
+        {
+          "storage": "256GB",
+          "a": 210000,
+          "a_minus": 190000,
+          "b_plus": 170000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 90000
+        },
+        {
+          "storage": "512GB",
+          "a": 220000,
+          "a_minus": 200000,
+          "b_plus": 180000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 90000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone XS Max",
+      "slug": "iphone-xs-max",
+      "series": "X",
+      "sort_order": 13,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 70000,
+        "lcd_uninspectable": 10000,
+        "face_id": 20000,
+        "camera": 20000,
+        "wifi": 30000,
+        "mic": 5000,
+        "back_glass": 0,
+        "true_tone": 0,
+        "nongenuine_parts": null,
+        "genuine_parts": null
+      },
+      "scrap_krw": 15000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 240000,
+          "a_minus": 220000,
+          "b_plus": 200000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 110000
+        },
+        {
+          "storage": "256GB",
+          "a": 280000,
+          "a_minus": 260000,
+          "b_plus": 240000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 120000
+        },
+        {
+          "storage": "512GB",
+          "a": 290000,
+          "a_minus": 270000,
+          "b_plus": 250000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 130000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 11",
+      "slug": "iphone-11",
+      "series": "11",
+      "sort_order": 14,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 35000,
+        "lcd_uninspectable": 20000,
+        "face_id": 25000,
+        "camera": 35000,
+        "wifi": 40000,
+        "mic": 10000,
+        "back_glass": 0,
+        "true_tone": 45000,
+        "nongenuine_parts": 45000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 25000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 220000,
+          "a_minus": 210000,
+          "b_plus": 180000,
+          "b_minus": 160000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 140000
+        },
+        {
+          "storage": "128GB",
+          "a": 250000,
+          "a_minus": 240000,
+          "b_plus": 210000,
+          "b_minus": 180000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 160000
+        },
+        {
+          "storage": "256GB",
+          "a": 260000,
+          "a_minus": 250000,
+          "b_plus": 220000,
+          "b_minus": 180000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 160000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 11 Pro",
+      "slug": "iphone-11-pro",
+      "series": "11",
+      "sort_order": 15,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 50000,
+        "lcd_uninspectable": 20000,
+        "face_id": 25000,
+        "camera": 35000,
+        "wifi": 40000,
+        "mic": 10000,
+        "back_glass": 0,
+        "true_tone": 45000,
+        "nongenuine_parts": 45000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 25000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 250000,
+          "a_minus": 230000,
+          "b_plus": 200000,
+          "b_minus": 190000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 170000
+        },
+        {
+          "storage": "256GB",
+          "a": 270000,
+          "a_minus": 250000,
+          "b_plus": 220000,
+          "b_minus": 210000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 190000
+        },
+        {
+          "storage": "512GB",
+          "a": 280000,
+          "a_minus": 260000,
+          "b_plus": 230000,
+          "b_minus": 220000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 190000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 11 Pro Max",
+      "slug": "iphone-11-pro-max",
+      "series": "11",
+      "sort_order": 16,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 85000,
+        "lcd_uninspectable": 20000,
+        "face_id": 25000,
+        "camera": 35000,
+        "wifi": 40000,
+        "mic": 10000,
+        "back_glass": 0,
+        "true_tone": 45000,
+        "nongenuine_parts": 45000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 25000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 310000,
+          "a_minus": 290000,
+          "b_plus": 260000,
+          "b_minus": 230000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 200000
+        },
+        {
+          "storage": "256GB",
+          "a": 330000,
+          "a_minus": 310000,
+          "b_plus": 280000,
+          "b_minus": 250000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 210000
+        },
+        {
+          "storage": "512GB",
+          "a": 340000,
+          "a_minus": 320000,
+          "b_plus": 290000,
+          "b_minus": 260000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 210000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 12 mini",
+      "slug": "iphone-12-mini",
+      "series": "12",
+      "sort_order": 17,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 65000,
+        "lcd_uninspectable": 20000,
+        "face_id": 30000,
+        "camera": 45000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 75000,
+        "nongenuine_parts": 75000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 30000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 190000,
+          "a_minus": 170000,
+          "b_plus": 150000,
+          "b_minus": 130000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 110000
+        },
+        {
+          "storage": "128GB",
+          "a": 220000,
+          "a_minus": 200000,
+          "b_plus": 170000,
+          "b_minus": 150000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 130000
+        },
+        {
+          "storage": "256GB",
+          "a": 230000,
+          "a_minus": 210000,
+          "b_plus": 180000,
+          "b_minus": 160000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 130000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 12",
+      "slug": "iphone-12",
+      "series": "12",
+      "sort_order": 18,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 85000,
+        "lcd_uninspectable": 20000,
+        "face_id": 30000,
+        "camera": 45000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 75000,
+        "nongenuine_parts": 75000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 30000,
+      "prices": [
+        {
+          "storage": "64GB",
+          "a": 250000,
+          "a_minus": 230000,
+          "b_plus": 200000,
+          "b_minus": 180000,
+          "battery_low_a": 200000,
+          "battery_low_b_plus": 180000,
+          "base": 170000
+        },
+        {
+          "storage": "128GB",
+          "a": 290000,
+          "a_minus": 270000,
+          "b_plus": 240000,
+          "b_minus": 200000,
+          "battery_low_a": 240000,
+          "battery_low_b_plus": 220000,
+          "base": 190000
+        },
+        {
+          "storage": "256GB",
+          "a": 300000,
+          "a_minus": 280000,
+          "b_plus": 250000,
+          "b_minus": 200000,
+          "battery_low_a": 240000,
+          "battery_low_b_plus": 220000,
+          "base": 190000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 12 Pro",
+      "slug": "iphone-12-pro",
+      "series": "12",
+      "sort_order": 19,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 90000,
+        "lcd_uninspectable": 20000,
+        "face_id": 30000,
+        "camera": 45000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 75000,
+        "nongenuine_parts": 75000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 30000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 370000,
+          "a_minus": 350000,
+          "b_plus": 320000,
+          "b_minus": 270000,
+          "battery_low_a": 320000,
+          "battery_low_b_plus": 290000,
+          "base": 240000
+        },
+        {
+          "storage": "256GB",
+          "a": 400000,
+          "a_minus": 380000,
+          "b_plus": 350000,
+          "b_minus": 310000,
+          "battery_low_a": 350000,
+          "battery_low_b_plus": 320000,
+          "base": 260000
+        },
+        {
+          "storage": "512GB",
+          "a": 410000,
+          "a_minus": 390000,
+          "b_plus": 360000,
+          "b_minus": 310000,
+          "battery_low_a": 340000,
+          "battery_low_b_plus": 310000,
+          "base": 260000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 12 Pro Max",
+      "slug": "iphone-12-pro-max",
+      "series": "12",
+      "sort_order": 20,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 150000,
+        "lcd_uninspectable": 20000,
+        "face_id": 30000,
+        "camera": 45000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 75000,
+        "nongenuine_parts": 75000,
+        "genuine_parts": 20000
+      },
+      "scrap_krw": 30000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 470000,
+          "a_minus": 450000,
+          "b_plus": 420000,
+          "b_minus": 350000,
+          "battery_low_a": 420000,
+          "battery_low_b_plus": 390000,
+          "base": 280000
+        },
+        {
+          "storage": "256GB",
+          "a": 510000,
+          "a_minus": 490000,
+          "b_plus": 460000,
+          "b_minus": 390000,
+          "battery_low_a": 460000,
+          "battery_low_b_plus": 430000,
+          "base": 310000
+        },
+        {
+          "storage": "512GB",
+          "a": 530000,
+          "a_minus": 510000,
+          "b_plus": 480000,
+          "b_minus": 400000,
+          "battery_low_a": 470000,
+          "battery_low_b_plus": 440000,
+          "base": 320000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 13 mini",
+      "slug": "iphone-13-mini",
+      "series": "13",
+      "sort_order": 21,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 110000,
+        "lcd_uninspectable": 20000,
+        "face_id": 55000,
+        "camera": 50000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 85000,
+        "nongenuine_parts": 85000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 35000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 280000,
+          "a_minus": 260000,
+          "b_plus": 230000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 210000
+        },
+        {
+          "storage": "256GB",
+          "a": 330000,
+          "a_minus": 320000,
+          "b_plus": 290000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 250000
+        },
+        {
+          "storage": "512GB",
+          "a": 350000,
+          "a_minus": 330000,
+          "b_plus": 300000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 250000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 13",
+      "slug": "iphone-13",
+      "series": "13",
+      "sort_order": 22,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 90000,
+        "lcd_uninspectable": 20000,
+        "face_id": 55000,
+        "camera": 50000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 85000,
+        "nongenuine_parts": 85000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 35000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 350000,
+          "a_minus": 330000,
+          "b_plus": 310000,
+          "b_minus": 280000,
+          "battery_low_a": 300000,
+          "battery_low_b_plus": 280000,
+          "base": 270000
+        },
+        {
+          "storage": "256GB",
+          "a": 410000,
+          "a_minus": 390000,
+          "b_plus": 370000,
+          "b_minus": 330000,
+          "battery_low_a": 360000,
+          "battery_low_b_plus": 340000,
+          "base": 290000
+        },
+        {
+          "storage": "512GB",
+          "a": 420000,
+          "a_minus": 400000,
+          "b_plus": 380000,
+          "b_minus": 340000,
+          "battery_low_a": 370000,
+          "battery_low_b_plus": 350000,
+          "base": 300000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 13 Pro",
+      "slug": "iphone-13-pro",
+      "series": "13",
+      "sort_order": 23,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 155000,
+        "lcd_uninspectable": 20000,
+        "face_id": 55000,
+        "camera": 50000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 85000,
+        "nongenuine_parts": 85000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 35000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 450000,
+          "a_minus": 420000,
+          "b_plus": 400000,
+          "b_minus": 370000,
+          "battery_low_a": 390000,
+          "battery_low_b_plus": 370000,
+          "base": 350000
+        },
+        {
+          "storage": "256GB",
+          "a": 510000,
+          "a_minus": 480000,
+          "b_plus": 460000,
+          "b_minus": 420000,
+          "battery_low_a": 450000,
+          "battery_low_b_plus": 420000,
+          "base": 380000
+        },
+        {
+          "storage": "512GB",
+          "a": 520000,
+          "a_minus": 490000,
+          "b_plus": 470000,
+          "b_minus": 430000,
+          "battery_low_a": 460000,
+          "battery_low_b_plus": 430000,
+          "base": 390000
+        },
+        {
+          "storage": "1TB",
+          "a": 530000,
+          "a_minus": 500000,
+          "b_plus": 480000,
+          "b_minus": 430000,
+          "battery_low_a": 470000,
+          "battery_low_b_plus": 440000,
+          "base": 390000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 13 Pro Max",
+      "slug": "iphone-13-pro-max",
+      "series": "13",
+      "sort_order": 24,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 240000,
+        "lcd_uninspectable": 20000,
+        "face_id": 55000,
+        "camera": 50000,
+        "wifi": 50000,
+        "mic": 20000,
+        "back_glass": 0,
+        "true_tone": 85000,
+        "nongenuine_parts": 85000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 35000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 590000,
+          "a_minus": 560000,
+          "b_plus": 530000,
+          "b_minus": 470000,
+          "battery_low_a": 520000,
+          "battery_low_b_plus": 480000,
+          "base": 420000
+        },
+        {
+          "storage": "256GB",
+          "a": 640000,
+          "a_minus": 610000,
+          "b_plus": 580000,
+          "b_minus": 520000,
+          "battery_low_a": 570000,
+          "battery_low_b_plus": 530000,
+          "base": 465000
+        },
+        {
+          "storage": "512GB",
+          "a": 660000,
+          "a_minus": 630000,
+          "b_plus": 600000,
+          "b_minus": 530000,
+          "battery_low_a": 590000,
+          "battery_low_b_plus": 550000,
+          "base": 475000
+        },
+        {
+          "storage": "1TB",
+          "a": 670000,
+          "a_minus": 640000,
+          "b_plus": 610000,
+          "b_minus": 540000,
+          "battery_low_a": 600000,
+          "battery_low_b_plus": 560000,
+          "base": 475000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 14",
+      "slug": "iphone-14",
+      "series": "14",
+      "sort_order": 25,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 140000,
+        "lcd_uninspectable": 20000,
+        "face_id": 70000,
+        "camera": 65000,
+        "wifi": 60000,
+        "mic": 30000,
+        "back_glass": 0,
+        "true_tone": 100000,
+        "nongenuine_parts": 100000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 400000,
+          "a_minus": 370000,
+          "b_plus": 340000,
+          "b_minus": null,
+          "battery_low_a": 340000,
+          "battery_low_b_plus": 320000,
+          "base": 310000
+        },
+        {
+          "storage": "256GB",
+          "a": 450000,
+          "a_minus": 420000,
+          "b_plus": 390000,
+          "b_minus": null,
+          "battery_low_a": 390000,
+          "battery_low_b_plus": 370000,
+          "base": 350000
+        },
+        {
+          "storage": "512GB",
+          "a": 480000,
+          "a_minus": 450000,
+          "b_plus": 420000,
+          "b_minus": null,
+          "battery_low_a": 420000,
+          "battery_low_b_plus": 390000,
+          "base": 360000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 14 Plus",
+      "slug": "iphone-14-plus",
+      "series": "14",
+      "sort_order": 26,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 160000,
+        "lcd_uninspectable": 20000,
+        "face_id": 70000,
+        "camera": 65000,
+        "wifi": 60000,
+        "mic": 30000,
+        "back_glass": 0,
+        "true_tone": 100000,
+        "nongenuine_parts": 100000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 450000,
+          "a_minus": 420000,
+          "b_plus": 390000,
+          "b_minus": null,
+          "battery_low_a": 390000,
+          "battery_low_b_plus": 370000,
+          "base": 360000
+        },
+        {
+          "storage": "256GB",
+          "a": 520000,
+          "a_minus": 490000,
+          "b_plus": 460000,
+          "b_minus": null,
+          "battery_low_a": 460000,
+          "battery_low_b_plus": 440000,
+          "base": 420000
+        },
+        {
+          "storage": "512GB",
+          "a": 530000,
+          "a_minus": 500000,
+          "b_plus": 470000,
+          "b_minus": null,
+          "battery_low_a": 470000,
+          "battery_low_b_plus": 450000,
+          "base": 430000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 14 Pro",
+      "slug": "iphone-14-pro",
+      "series": "14",
+      "sort_order": 27,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 220000,
+        "lcd_uninspectable": 20000,
+        "face_id": 70000,
+        "camera": 65000,
+        "wifi": 60000,
+        "mic": 30000,
+        "back_glass": 0,
+        "true_tone": 100000,
+        "nongenuine_parts": 100000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 610000,
+          "a_minus": 580000,
+          "b_plus": 540000,
+          "b_minus": 500000,
+          "battery_low_a": 530000,
+          "battery_low_b_plus": 500000,
+          "base": 470000
+        },
+        {
+          "storage": "256GB",
+          "a": 670000,
+          "a_minus": 640000,
+          "b_plus": 600000,
+          "b_minus": 550000,
+          "battery_low_a": 590000,
+          "battery_low_b_plus": 550000,
+          "base": 510000
+        },
+        {
+          "storage": "512GB",
+          "a": 700000,
+          "a_minus": 670000,
+          "b_plus": 630000,
+          "b_minus": 560000,
+          "battery_low_a": 620000,
+          "battery_low_b_plus": 560000,
+          "base": 530000
+        },
+        {
+          "storage": "1TB",
+          "a": 710000,
+          "a_minus": 680000,
+          "b_plus": 640000,
+          "b_minus": 570000,
+          "battery_low_a": 630000,
+          "battery_low_b_plus": 570000,
+          "base": 540000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 14 Pro Max",
+      "slug": "iphone-14-pro-max",
+      "series": "14",
+      "sort_order": 28,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 280000,
+        "lcd_uninspectable": 20000,
+        "face_id": 70000,
+        "camera": 65000,
+        "wifi": 60000,
+        "mic": 30000,
+        "back_glass": 0,
+        "true_tone": 100000,
+        "nongenuine_parts": 100000,
+        "genuine_parts": 30000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 770000,
+          "a_minus": 740000,
+          "b_plus": 700000,
+          "b_minus": 650000,
+          "battery_low_a": 690000,
+          "battery_low_b_plus": 650000,
+          "base": 570000
+        },
+        {
+          "storage": "256GB",
+          "a": 840000,
+          "a_minus": 810000,
+          "b_plus": 770000,
+          "b_minus": 700000,
+          "battery_low_a": 760000,
+          "battery_low_b_plus": 700000,
+          "base": 625000
+        },
+        {
+          "storage": "512GB",
+          "a": 870000,
+          "a_minus": 840000,
+          "b_plus": 800000,
+          "b_minus": 710000,
+          "battery_low_a": 790000,
+          "battery_low_b_plus": 710000,
+          "base": 645000
+        },
+        {
+          "storage": "1TB",
+          "a": 880000,
+          "a_minus": 850000,
+          "b_plus": 810000,
+          "b_minus": 720000,
+          "battery_low_a": 800000,
+          "battery_low_b_plus": 720000,
+          "base": 655000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 15",
+      "slug": "iphone-15",
+      "series": "15",
+      "sort_order": 29,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 175000,
+        "lcd_uninspectable": 20000,
+        "face_id": 110000,
+        "camera": 110000,
+        "wifi": 120000,
+        "mic": 50000,
+        "back_glass": 0,
+        "true_tone": 110000,
+        "nongenuine_parts": 110000,
+        "genuine_parts": 50000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 580000,
+          "a_minus": 550000,
+          "b_plus": 520000,
+          "b_minus": null,
+          "battery_low_a": 520000,
+          "battery_low_b_plus": 500000,
+          "base": 470000
+        },
+        {
+          "storage": "256GB",
+          "a": 660000,
+          "a_minus": 630000,
+          "b_plus": 600000,
+          "b_minus": null,
+          "battery_low_a": 600000,
+          "battery_low_b_plus": 570000,
+          "base": 510000
+        },
+        {
+          "storage": "512GB",
+          "a": 710000,
+          "a_minus": 680000,
+          "b_plus": 650000,
+          "b_minus": null,
+          "battery_low_a": 630000,
+          "battery_low_b_plus": 600000,
+          "base": 520000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 15 Plus",
+      "slug": "iphone-15-plus",
+      "series": "15",
+      "sort_order": 30,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 195000,
+        "lcd_uninspectable": 20000,
+        "face_id": 110000,
+        "camera": 110000,
+        "wifi": 120000,
+        "mic": 50000,
+        "back_glass": 0,
+        "true_tone": 110000,
+        "nongenuine_parts": 110000,
+        "genuine_parts": 50000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 600000,
+          "a_minus": 570000,
+          "b_plus": 540000,
+          "b_minus": null,
+          "battery_low_a": 540000,
+          "battery_low_b_plus": 520000,
+          "base": 500000
+        },
+        {
+          "storage": "256GB",
+          "a": 700000,
+          "a_minus": 670000,
+          "b_plus": 640000,
+          "b_minus": null,
+          "battery_low_a": 640000,
+          "battery_low_b_plus": 610000,
+          "base": 550000
+        },
+        {
+          "storage": "512GB",
+          "a": 730000,
+          "a_minus": 700000,
+          "b_plus": 670000,
+          "b_minus": null,
+          "battery_low_a": 670000,
+          "battery_low_b_plus": 630000,
+          "base": 560000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 15 Pro",
+      "slug": "iphone-15-pro",
+      "series": "15",
+      "sort_order": 31,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 260000,
+        "lcd_uninspectable": 20000,
+        "face_id": 110000,
+        "camera": 110000,
+        "wifi": 120000,
+        "mic": 50000,
+        "back_glass": 0,
+        "true_tone": 110000,
+        "nongenuine_parts": 110000,
+        "genuine_parts": 50000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 800000,
+          "a_minus": 780000,
+          "b_plus": 720000,
+          "b_minus": null,
+          "battery_low_a": 720000,
+          "battery_low_b_plus": 660000,
+          "base": 630000
+        },
+        {
+          "storage": "256GB",
+          "a": 890000,
+          "a_minus": 870000,
+          "b_plus": 800000,
+          "b_minus": null,
+          "battery_low_a": 800000,
+          "battery_low_b_plus": 730000,
+          "base": 680000
+        },
+        {
+          "storage": "512GB",
+          "a": 920000,
+          "a_minus": 900000,
+          "b_plus": 840000,
+          "b_minus": null,
+          "battery_low_a": 840000,
+          "battery_low_b_plus": 750000,
+          "base": 700000
+        },
+        {
+          "storage": "1TB",
+          "a": 930000,
+          "a_minus": 910000,
+          "b_plus": 850000,
+          "b_minus": null,
+          "battery_low_a": 850000,
+          "battery_low_b_plus": 760000,
+          "base": 710000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 15 Pro Max",
+      "slug": "iphone-15-pro-max",
+      "series": "15",
+      "sort_order": 32,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 340000,
+        "lcd_uninspectable": 20000,
+        "face_id": 110000,
+        "camera": 110000,
+        "wifi": 120000,
+        "mic": 50000,
+        "back_glass": 0,
+        "true_tone": 110000,
+        "nongenuine_parts": 110000,
+        "genuine_parts": 50000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 990000,
+          "a_minus": 960000,
+          "b_plus": 900000,
+          "b_minus": null,
+          "battery_low_a": 900000,
+          "battery_low_b_plus": 860000,
+          "base": 815000
+        },
+        {
+          "storage": "512GB",
+          "a": 1050000,
+          "a_minus": 1020000,
+          "b_plus": 960000,
+          "b_minus": null,
+          "battery_low_a": 960000,
+          "battery_low_b_plus": 920000,
+          "base": 880000
+        },
+        {
+          "storage": "1TB",
+          "a": 1100000,
+          "a_minus": 1070000,
+          "b_plus": 1010000,
+          "b_minus": null,
+          "battery_low_a": 1010000,
+          "battery_low_b_plus": 970000,
+          "base": 880000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 16",
+      "slug": "iphone-16",
+      "series": "16",
+      "sort_order": 33,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 230000,
+        "lcd_uninspectable": null,
+        "face_id": 150000,
+        "camera": 150000,
+        "wifi": 150000,
+        "mic": 100000,
+        "back_glass": 20000,
+        "true_tone": 250000,
+        "nongenuine_parts": 250000,
+        "genuine_parts": 100000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 760000,
+          "a_minus": 730000,
+          "b_plus": 700000,
+          "b_minus": null,
+          "battery_low_a": 690000,
+          "battery_low_b_plus": 660000,
+          "base": 595000
+        },
+        {
+          "storage": "256GB",
+          "a": 860000,
+          "a_minus": 830000,
+          "b_plus": 800000,
+          "b_minus": null,
+          "battery_low_a": 790000,
+          "battery_low_b_plus": 750000,
+          "base": 675000
+        },
+        {
+          "storage": "512GB",
+          "a": 960000,
+          "a_minus": 930000,
+          "b_plus": 900000,
+          "b_minus": null,
+          "battery_low_a": 890000,
+          "battery_low_b_plus": 850000,
+          "base": 695000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 16 Plus",
+      "slug": "iphone-16-plus",
+      "series": "16",
+      "sort_order": 34,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 260000,
+        "lcd_uninspectable": null,
+        "face_id": 150000,
+        "camera": 150000,
+        "wifi": 150000,
+        "mic": 100000,
+        "back_glass": 20000,
+        "true_tone": 250000,
+        "nongenuine_parts": 250000,
+        "genuine_parts": 100000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 850000,
+          "a_minus": 820000,
+          "b_plus": 790000,
+          "b_minus": null,
+          "battery_low_a": 770000,
+          "battery_low_b_plus": 740000,
+          "base": 620000
+        },
+        {
+          "storage": "256GB",
+          "a": 950000,
+          "a_minus": 920000,
+          "b_plus": 890000,
+          "b_minus": null,
+          "battery_low_a": 870000,
+          "battery_low_b_plus": 840000,
+          "base": 700000
+        },
+        {
+          "storage": "512GB",
+          "a": 1050000,
+          "a_minus": 1020000,
+          "b_plus": 990000,
+          "b_minus": null,
+          "battery_low_a": 970000,
+          "battery_low_b_plus": 940000,
+          "base": 720000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 16 Pro",
+      "slug": "iphone-16-pro",
+      "series": "16",
+      "sort_order": 35,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 300000,
+        "lcd_uninspectable": null,
+        "face_id": 150000,
+        "camera": 150000,
+        "wifi": 150000,
+        "mic": 100000,
+        "back_glass": 20000,
+        "true_tone": 250000,
+        "nongenuine_parts": 250000,
+        "genuine_parts": 100000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 960000,
+          "a_minus": 940000,
+          "b_plus": 900000,
+          "b_minus": null,
+          "battery_low_a": 890000,
+          "battery_low_b_plus": 850000,
+          "base": 780000
+        },
+        {
+          "storage": "256GB",
+          "a": 1050000,
+          "a_minus": 1030000,
+          "b_plus": 1000000,
+          "b_minus": null,
+          "battery_low_a": 980000,
+          "battery_low_b_plus": 950000,
+          "base": 860000
+        },
+        {
+          "storage": "512GB",
+          "a": 1140000,
+          "a_minus": 1120000,
+          "b_plus": 1090000,
+          "b_minus": null,
+          "battery_low_a": 1070000,
+          "battery_low_b_plus": 1040000,
+          "base": 900000
+        },
+        {
+          "storage": "1TB",
+          "a": 1160000,
+          "a_minus": 1140000,
+          "b_plus": 1100000,
+          "b_minus": null,
+          "battery_low_a": 1090000,
+          "battery_low_b_plus": 1050000,
+          "base": 920000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 16 Pro Max",
+      "slug": "iphone-16-pro-max",
+      "series": "16",
+      "sort_order": 36,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 380000,
+        "lcd_uninspectable": null,
+        "face_id": 150000,
+        "camera": 150000,
+        "wifi": 150000,
+        "mic": 100000,
+        "back_glass": 20000,
+        "true_tone": 250000,
+        "nongenuine_parts": 250000,
+        "genuine_parts": 100000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 1240000,
+          "a_minus": 1220000,
+          "b_plus": 1180000,
+          "b_minus": null,
+          "battery_low_a": 1170000,
+          "battery_low_b_plus": 1130000,
+          "base": 1010000
+        },
+        {
+          "storage": "512GB",
+          "a": 1370000,
+          "a_minus": 1350000,
+          "b_plus": 1310000,
+          "b_minus": null,
+          "battery_low_a": 1300000,
+          "battery_low_b_plus": 1260000,
+          "base": 1090000
+        },
+        {
+          "storage": "1TB",
+          "a": 1520000,
+          "a_minus": 1500000,
+          "b_plus": 1460000,
+          "b_minus": null,
+          "battery_low_a": 1450000,
+          "battery_low_b_plus": 1410000,
+          "base": 1120000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 16e",
+      "slug": "iphone-16e",
+      "series": "16",
+      "sort_order": 37,
+      "deductions_krw": {
+        "screen_broken": 10000,
+        "lcd": 190000,
+        "lcd_uninspectable": null,
+        "face_id": 150000,
+        "camera": 150000,
+        "wifi": 150000,
+        "mic": 100000,
+        "back_glass": 20000,
+        "true_tone": 250000,
+        "nongenuine_parts": 250000,
+        "genuine_parts": 100000
+      },
+      "scrap_krw": 50000,
+      "prices": [
+        {
+          "storage": "128GB",
+          "a": 520000,
+          "a_minus": 490000,
+          "b_plus": 460000,
+          "b_minus": 390000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 340000
+        },
+        {
+          "storage": "256GB",
+          "a": 620000,
+          "a_minus": 590000,
+          "b_plus": 560000,
+          "b_minus": 480000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 390000
+        },
+        {
+          "storage": "512GB",
+          "a": 720000,
+          "a_minus": 690000,
+          "b_plus": 660000,
+          "b_minus": 580000,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 410000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 17",
+      "slug": "iphone-17",
+      "series": "17",
+      "sort_order": 38,
+      "deductions_krw": {
+        "screen_broken": 50000,
+        "lcd": 400000,
+        "lcd_uninspectable": null,
+        "face_id": 200000,
+        "camera": 200000,
+        "wifi": 200000,
+        "mic": 200000,
+        "back_glass": 50000,
+        "true_tone": 300000,
+        "nongenuine_parts": 300000,
+        "genuine_parts": 200000
+      },
+      "scrap_krw": null,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 1000000,
+          "a_minus": 980000,
+          "b_plus": 960000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 770000
+        },
+        {
+          "storage": "512GB",
+          "a": 1100000,
+          "a_minus": 1080000,
+          "b_plus": 1050000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 870000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone Air",
+      "slug": "iphone-air",
+      "series": "17",
+      "sort_order": 39,
+      "deductions_krw": {
+        "screen_broken": 50000,
+        "lcd": 400000,
+        "lcd_uninspectable": null,
+        "face_id": 200000,
+        "camera": 200000,
+        "wifi": 200000,
+        "mic": 200000,
+        "back_glass": 50000,
+        "true_tone": 300000,
+        "nongenuine_parts": 300000,
+        "genuine_parts": 200000
+      },
+      "scrap_krw": null,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 990000,
+          "a_minus": 970000,
+          "b_plus": 940000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 700000
+        },
+        {
+          "storage": "512GB",
+          "a": 1080000,
+          "a_minus": 1060000,
+          "b_plus": 1020000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 800000
+        },
+        {
+          "storage": "1TB",
+          "a": 1170000,
+          "a_minus": 1150000,
+          "b_plus": 1110000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 850000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 17 Pro",
+      "slug": "iphone-17-pro",
+      "series": "17",
+      "sort_order": 40,
+      "deductions_krw": {
+        "screen_broken": 50000,
+        "lcd": 500000,
+        "lcd_uninspectable": null,
+        "face_id": 200000,
+        "camera": 200000,
+        "wifi": 200000,
+        "mic": 200000,
+        "back_glass": 50000,
+        "true_tone": 300000,
+        "nongenuine_parts": 300000,
+        "genuine_parts": 200000
+      },
+      "scrap_krw": null,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 1510000,
+          "a_minus": 1490000,
+          "b_plus": 1450000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1070000
+        },
+        {
+          "storage": "512GB",
+          "a": 1640000,
+          "a_minus": 1620000,
+          "b_plus": 1580000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1170000
+        },
+        {
+          "storage": "1TB",
+          "a": 1770000,
+          "a_minus": 1750000,
+          "b_plus": 1710000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1270000
+        }
+      ]
+    },
+    {
+      "brand": "Apple",
+      "name": "iPhone 17 Pro Max",
+      "slug": "iphone-17-pro-max",
+      "series": "17",
+      "sort_order": 41,
+      "deductions_krw": {
+        "screen_broken": 50000,
+        "lcd": 500000,
+        "lcd_uninspectable": null,
+        "face_id": 200000,
+        "camera": 200000,
+        "wifi": 200000,
+        "mic": 200000,
+        "back_glass": 50000,
+        "true_tone": 300000,
+        "nongenuine_parts": 300000,
+        "genuine_parts": 200000
+      },
+      "scrap_krw": null,
+      "prices": [
+        {
+          "storage": "256GB",
+          "a": 1790000,
+          "a_minus": 1760000,
+          "b_plus": 1720000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1470000
+        },
+        {
+          "storage": "512GB",
+          "a": 1940000,
+          "a_minus": 1910000,
+          "b_plus": 1880000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1520000
+        },
+        {
+          "storage": "1TB",
+          "a": 2100000,
+          "a_minus": 2070000,
+          "b_plus": 2050000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1570000
+        },
+        {
+          "storage": "2TB",
+          "a": 2110000,
+          "a_minus": 2080000,
+          "b_plus": 2060000,
+          "b_minus": null,
+          "battery_low_a": null,
+          "battery_low_b_plus": null,
+          "base": 1570000
+        }
+      ]
+    }
+  ]
+}

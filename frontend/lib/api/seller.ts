@@ -8,7 +8,15 @@
 
 import { apiFetch, API_BASE, ApiError } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/api/token";
-import type { Item, ItemImage, Auction, AuctionStatus, ItemCondition } from "@/lib/api/types";
+import type {
+  Item,
+  ItemImage,
+  Auction,
+  AuctionStatus,
+  ItemCondition,
+  DeviceDefect,
+  DeviceGrade,
+} from "@/lib/api/types";
 
 export type CreateItemPayload = {
   title: string;
@@ -33,6 +41,13 @@ export type CreateItemPayload = {
   starting_price: string;
   /** tiyin (string) */
   reserve_price?: string;
+  /** Telefon tavsifi — narx ko'rsatkichi modeli (GET /price-guide). */
+  device_model_id?: number;
+  device_storage?: string;
+  device_grade?: DeviceGrade;
+  /** % (1–100) */
+  battery_health?: number;
+  device_defects?: DeviceDefect[];
 };
 
 /** Tovar (item) yaratish. POST /items → Item. */

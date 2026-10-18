@@ -13,6 +13,9 @@ import { Gallery } from "@/components/product/gallery"
 import { AssuranceBlock } from "@/components/product/assurance-block"
 import { DeadlineBar } from "@/components/ui/deadline-bar"
 import { BidPanel } from "@/components/lot/bid-panel"
+import { MobileBidBar } from "@/components/lot/mobile-bid-bar"
+import { DeviceBadges } from "@/components/device/device-badges"
+import { MarketValueCard } from "@/components/device/market-value-card"
 import { BidHistory } from "@/components/lot/bid-history"
 import { LotSpecs, CONDITION_LABEL } from "@/components/lot/lot-specs"
 import { WatchButton } from "@/components/lot/watch-button"
@@ -147,25 +150,27 @@ function LotDetail({ auctionId }: { auctionId: number }) {
           <BreadcrumbItem>
             <BreadcrumbLink href="/catalog/hammasi">Katalog</BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
+          {/* Mobilda nom pastda sarlavhada bor — non-wrapping bir qator qolsin. */}
+          <BreadcrumbSeparator className="max-sm:hidden" />
+          <BreadcrumbItem className="max-sm:hidden">
             <BreadcrumbPage className="line-clamp-1">{item.title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="grid gap-8 md:grid-cols-2 md:gap-10">
+      <div className="grid gap-5 md:grid-cols-2 md:gap-10">
         <Gallery title={item.title} images={imageUrls} />
 
         <div className="grid gap-5">
           <div className="grid gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
               {item.title}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={item.condition === "new" ? "default" : "secondary"}>
                 {CONDITION_LABEL[item.condition]}
               </Badge>
+              <DeviceBadges item={item} showGradeLabel />
               {auction.status === "active" ? (
                 <DeadlineBar endsAt={auction.end_time} inline />
               ) : (
@@ -174,7 +179,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
             </div>
           </div>
 
-          <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
+          <div id="price-card" className="grid gap-1 rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm text-muted-foreground">Joriy narx</span>
               {liveStatus === "open" && (
@@ -212,10 +217,13 @@ function LotDetail({ auctionId }: { auctionId: number }) {
                 Soʻnggi daqiqalardagi taklif tufayli muddat uzaytirildi
               </span>
             )}
+            <MarketValueCard item={item} auction={auction} embedded />
           </div>
 
-          <BidPanel auction={auction} onBid={refresh} />
-          <div className="flex flex-col gap-2 sm:flex-row *:flex-1">
+          <div id="bid-panel" className="scroll-mt-24">
+            <BidPanel auction={auction} onBid={refresh} />
+          </div>
+          <div className="flex gap-2 *:flex-1">
             <WatchButton auctionId={auction.id} className="w-full" />
             <MessageSellerButton
               itemId={item.id}
@@ -230,7 +238,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
         </div>
       </div>
 
-      <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-12">
+      <div className="mt-10 grid gap-10 md:mt-12 md:grid-cols-2 md:gap-12">
         <LotSpecs item={item} auction={auction} />
 
         <section>
@@ -243,9 +251,13 @@ function LotDetail({ auctionId }: { auctionId: number }) {
         </section>
       </div>
 
-      <div className="mt-12">
+      <div className="mt-10 md:mt-12">
         <BidHistory auction={auction} reloadKey={historyKey} onChanged={refresh} />
       </div>
+
+      <MobileBidBar auction={auction} targetId="bid-panel" priceId="price-card" />
+      {/* Yopishqoq panel ostida kontent qolib ketmasin. */}
+      {auction.status === "active" && <div className="h-16 md:hidden" aria-hidden="true" />}
     </div>
   )
 }

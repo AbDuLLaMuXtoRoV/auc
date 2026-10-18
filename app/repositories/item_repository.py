@@ -20,12 +20,18 @@ def _build_search_text(title: str | None, description: str | None) -> str | None
     return normalize_search(" ".join(parts))
 
 
+def _unique_defects(values: list | None) -> list[str]:
+    """Nosozliklar ro'yxati: takrorsiz, tartib saqlanadi, JSON uchun oddiy satrlar."""
+    return list(dict.fromkeys(str(v) for v in values or []))
+
+
 class ItemRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
     def create(self, seller: User, payload: ItemCreate) -> Item:
         data = payload.model_dump()
+        data["device_defects"] = _unique_defects(data.get("device_defects"))
         item = Item(seller_id=seller.id, **data)
         item.search_text = _build_search_text(data.get("title"), data.get("description"))
         self.db.add(item)
@@ -79,6 +85,8 @@ class ItemRepository:
 
     def update(self, item: Item, payload: ItemUpdate) -> Item:
         data = payload.model_dump(exclude_unset=True)
+        if "device_defects" in data:
+            data["device_defects"] = _unique_defects(data["device_defects"])
         for field, value in data.items():
             setattr(item, field, value)
         # title yoki description o'zgargan bo'lsa qidiruv matnini qayta yasaymiz.
@@ -122,6 +130,11 @@ class ItemRepository:
             starting_price=starting_price,
             reserve_price=reserve_price,
             relisted_from_id=source.id,
+            device_model_id=source.device_model_id,
+            device_storage=source.device_storage,
+            device_grade=source.device_grade,
+            battery_health=source.battery_health,
+            device_defects=list(source.device_defects or []),
         )
         self.db.add(clone)
         self.db.flush()
